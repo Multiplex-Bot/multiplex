@@ -43,8 +43,11 @@ async fn main() {
                 commands::stats::ping(),
                 commands::stats::stats(),
                 commands::mate::create(),
+                commands::mate::edit(),
                 commands::mate::delete(),
                 commands::mate::switch(),
+                commands::collective::edit_collective(),
+                commands::info::info(),
             ],
             event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {

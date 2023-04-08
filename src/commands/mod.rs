@@ -1,3 +1,5 @@
+pub mod collective;
+pub mod info;
 pub mod mate;
 pub mod stats;
 

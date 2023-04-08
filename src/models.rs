@@ -12,11 +12,13 @@ pub struct DBMate {
     pub prefix: Option<String>,
     pub postfix: Option<String>,
     pub pronouns: Option<String>,
+    pub display_name: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DBCollective {
     pub user_id: i64,
+    pub name: Option<String>,
     pub bio: Option<String>,
     pub pronouns: Option<String>,
 }
