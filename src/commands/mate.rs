@@ -1,9 +1,7 @@
-
-
 use super::CommandContext;
 use crate::models::DBMate;
-use anyhow::{Result};
-use mongodb::bson::{doc};
+use anyhow::Result;
+use mongodb::bson::doc;
 use poise::serenity_prelude::{self as serenity};
 
 /// Register a new mate

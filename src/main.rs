@@ -4,12 +4,8 @@ mod models;
 mod pluralkit;
 mod tupperbox;
 
-
 use dotenvy::dotenv;
-use mongodb::{
-    options::{ClientOptions},
-    Client,
-};
+use mongodb::{options::ClientOptions, Client};
 use poise::serenity_prelude::{self as serenity, CacheHttp, GuildId};
 use std::env;
 

@@ -2,7 +2,7 @@ use super::CommandContext;
 use crate::models::{DBCollective, DBMate};
 use crate::pluralkit::{Config, Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy};
 use anyhow::{Context, Result};
-use mongodb::bson::{doc};
+use mongodb::bson::doc;
 use poise::futures_util::TryStreamExt;
 use poise::serenity_prelude::{self};
 use serde::{Deserialize, Serialize};

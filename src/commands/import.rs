@@ -5,7 +5,7 @@ use crate::{
     pluralkit::PluralkitExport,
     tupperbox::TupperboxExport,
 };
-use anyhow::{Result};
+use anyhow::Result;
 use mongodb::bson::{self, doc};
 use poise::serenity_prelude::{self};
 
