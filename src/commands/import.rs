@@ -47,6 +47,47 @@ pub async fn tupperbox(
     Ok(())
 }
 
+/// Import a Multiplex export into your collective (WARNING: WILL OVERWRITE ALL COLLECTIVE INFORMATION)
+#[poise::command(slash_command)]
+pub async fn multiplex(
+    ctx: CommandContext<'_>,
+    #[description = "your pluralkit export"] file: serenity_prelude::Attachment,
+) -> Result<()> {
+    let download = file.download().await?;
+    let content = String::from_utf8_lossy(&download);
+
+    let export: PluralkitExport = serde_json::from_str(&content)?;
+
+    let database = &ctx.data().database;
+
+    let collectives_collection = database.collection::<DBCollective>("collectives");
+    let mates_collection = database.collection::<DBMate>("mates");
+
+    collectives_collection
+        .find_one_and_update(
+            doc! { "user_id": ctx.author().id.0 as i64 },
+            doc! { "$set": bson::to_bson(&export.to_collective(ctx.author().id)?).unwrap() },
+            UPSERT_OPTIONS.clone().unwrap(),
+        )
+        .await?;
+
+    for member in export.members.iter() {
+        let mate = member.to_mate(ctx.author().id)?;
+
+        mates_collection
+            .find_one_and_update(
+                doc! { "user_id": ctx.author().id.0 as i64, "name": mate.name.clone() },
+                doc! { "$set": bson::to_bson(&mate).unwrap() },
+                UPSERT_OPTIONS.clone().unwrap(),
+            )
+            .await?;
+    }
+
+    ctx.say("Successfully imported Multiplex export! (Note: exported Members may have taken precedence over any existing mates, and your collective information was completely overwritten with whatever you gave us. If so, sorry! They're unrecoverable!)").await?;
+
+    Ok(())
+}
+
 /// Import a Pluralkit export into your collective (WARNING: WILL OVERWRITE ALL COLLECTIVE INFORMATION)
 #[poise::command(slash_command)]
 pub async fn pluralkit(
