@@ -83,6 +83,9 @@ async fn send_proxied_message(
     let mut reattachments: Vec<AttachmentType> = vec![];
 
     for attachment in message.attachments.iter() {
+        if attachment.size >= 25000000 {
+            return Ok(());
+        }
         let download = attachment.download().await?;
         reattachments.push(AttachmentType::Bytes {
             data: std::borrow::Cow::Owned(download),
