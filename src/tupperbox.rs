@@ -32,19 +32,19 @@ impl Tupper {
             user_id: self.user_id.parse::<i64>()?,
             autoproxy: false,
             name: self.name.clone(),
-            avatar: if self.avatar_url != "" {
+            avatar: if !self.avatar_url.is_empty() {
                 self.avatar_url.clone()
             } else {
                 std::env::var("DEFAULT_AVATAR_URL").unwrap()
             },
             is_public: true,
             bio: self.description.clone(),
-            prefix: if self.brackets[0] != "" {
+            prefix: if !self.brackets[0].is_empty() {
                 Some(self.brackets[0].clone())
             } else {
                 None
             },
-            postfix: if self.brackets[1] != "" {
+            postfix: if !self.brackets[1].is_empty() {
                 Some(self.brackets[1].clone())
             } else {
                 None

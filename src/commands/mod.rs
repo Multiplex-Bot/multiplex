@@ -1,4 +1,4 @@
-pub mod collective;
+pub mod edit;
 pub mod export;
 pub mod import;
 pub mod info;

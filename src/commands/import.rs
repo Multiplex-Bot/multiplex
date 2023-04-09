@@ -5,12 +5,12 @@ use crate::{
     pluralkit::PluralkitExport,
     tupperbox::TupperboxExport,
 };
-use anyhow::{Context, Error, Result};
+use anyhow::{Result};
 use mongodb::bson::{self, doc};
-use poise::serenity_prelude::{self, CacheHttp};
+use poise::serenity_prelude::{self};
 
 #[poise::command(slash_command, subcommands("tupperbox", "pluralkit"))]
-pub async fn import(ctx: CommandContext<'_>) -> Result<()> {
+pub async fn import(_ctx: CommandContext<'_>) -> Result<()> {
     // This can't be reached without a prefix command, which we don't use
     unreachable!()
 }

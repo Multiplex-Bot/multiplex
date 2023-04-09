@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::{
     futures_util::TryStreamExt,
-    serenity_prelude::{self as serenity, CreateEmbed, Embed},
+    serenity_prelude::{self as serenity},
 };
 
 /// Get the info of a user's collective or one of their mates
@@ -20,7 +20,7 @@ pub async fn info(
     let mates_collection = database.collection::<DBMate>("mates");
 
     let user_id;
-    if let None = user {
+    if user.is_none() {
         user = Some(ctx.author().clone());
         user_id = ctx.author().id.0 as i64;
     } else {
@@ -110,16 +110,16 @@ pub async fn info(
                         mates_content = format!(
                             "{}\n{} *({})*",
                             mates_content,
-                            display_name.replace("*", "\\*"),
-                            mate.name.replace("*", "\\*")
+                            display_name.replace('*', "\\*"),
+                            mate.name.replace('*', "\\*")
                         )
                     } else {
                         mates_content =
-                            format!("{}\n{}", mates_content, mate.name.replace("*", "\\*"))
+                            format!("{}\n{}", mates_content, mate.name.replace('*', "\\*"))
                     }
                 }
                 mates_content = mates_content.trim().to_string();
-                if mates_content != "" {
+                if !mates_content.is_empty() {
                     e = e.field("Mates", mates_content, false);
                 }
                 e

@@ -1,5 +1,5 @@
 use super::CommandContext;
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::serenity_prelude::CacheHttp;
 

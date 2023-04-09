@@ -1,10 +1,8 @@
-use anyhow::{anyhow, Context, Result};
-use mongodb::bson::{doc, Document};
-use poise::futures_util::{StreamExt, TryStreamExt};
-use poise::serenity_prelude::json::Value;
-use poise::serenity_prelude::{
-    CacheHttp, Context as SerenityContext, Embed, Message, MessageType, Webhook, WebhookId,
-};
+use anyhow::{Context, Result};
+use mongodb::bson::doc;
+use poise::futures_util::TryStreamExt;
+
+use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message, Webhook, WebhookId};
 
 use crate::commands::Data;
 use crate::models::{DBChannel, DBMate};
@@ -36,11 +34,11 @@ async fn send_proxied_message(
     if let Some(referenced_message) = &message.referenced_message {
         // FIXME: this whole reply system is *really* jank, and will break if anyone uses a zero-width space in a message.
         new_content = format!(
-            "> {}\n[jump to content](https://discord.com/channels/{}/{}/{}) {}\n​{}​",
-            if let Some(_) = referenced_message.webhook_id {
+            "> {}\n[jump to content](https://discord.com/channels/{}/{}/{}) {}\n\u{200B}{}\u{200B}",
+            if referenced_message.webhook_id.is_some() {
                 let mut message_parts = referenced_message
                     .content
-                    .split("​")
+                    .split('\u{200B}')
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>();
                 message_parts.reverse();
@@ -48,15 +46,15 @@ async fn send_proxied_message(
                 message_parts
                     .get(1)
                     .unwrap_or(&referenced_message.content)
-                    .replace("\n", "\n> ")
+                    .replace('\n', "\n> ")
             } else {
-                referenced_message.content.replace("\n", "\n> ")
+                referenced_message.content.replace('\n', "\n> ")
             },
             message.guild_id.unwrap().0,
             referenced_message.channel_id.0,
             referenced_message.id.0,
             if message.mentions_user(&referenced_message.author) {
-                if let Some(_) = referenced_message.webhook_id {
+                if referenced_message.webhook_id.is_some() {
                     format!(
                         "- {}",
                         referenced_message

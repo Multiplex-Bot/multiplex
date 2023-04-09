@@ -4,13 +4,11 @@ mod models;
 mod pluralkit;
 mod tupperbox;
 
-use anyhow::{Error, Result};
+
 use dotenvy::dotenv;
 use mongodb::{
-    bson::Document,
-    options::{ClientOptions, FindOneAndUpdateOptions, UpdateModifications},
-    results::{CollectionType, UpdateResult},
-    Client, Database,
+    options::{ClientOptions},
+    Client,
 };
 use poise::serenity_prelude::{self as serenity, CacheHttp, GuildId};
 use std::env;
@@ -45,10 +43,9 @@ async fn main() {
                 commands::stats::ping(),
                 commands::stats::stats(),
                 commands::mate::create(),
-                commands::mate::edit(),
                 commands::mate::delete(),
                 commands::mate::switch(),
-                commands::collective::edit_collective(),
+                commands::edit::edit(),
                 commands::info::info(),
                 commands::import::import(),
                 commands::export::export(),
@@ -78,7 +75,9 @@ async fn main() {
             ..Default::default()
         })
         .token(env::var("TOKEN").expect("$TOKEN not found; did you specify it in .env?"))
-        .intents(serenity::GatewayIntents::all())
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        )
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 if let Ok(id) = env::var("DEV_GUILD") {
