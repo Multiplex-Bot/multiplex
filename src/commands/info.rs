@@ -93,7 +93,11 @@ pub async fn info(
 
         ctx.send(|b| {
             b.embed(|mut e| {
-                e = e.title(collective.name.unwrap());
+                e = e.title(
+                    collective
+                        .name
+                        .unwrap_or(format!("{}'s Collective", ctx.author().name)),
+                );
                 if let Some(bio) = collective.bio {
                     e = e.field("Bio", bio, false);
                 }

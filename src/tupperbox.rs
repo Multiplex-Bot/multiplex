@@ -27,7 +27,7 @@ pub struct Tupper {
 }
 
 impl Tupper {
-    pub fn into_mate(&self) -> Result<DBMate> {
+    pub fn to_mate(&self) -> Result<DBMate> {
         Ok(DBMate {
             user_id: self.user_id.parse::<i64>()?,
             autoproxy: false,

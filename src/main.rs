@@ -1,6 +1,7 @@
 mod commands;
 mod event_handler;
 mod models;
+mod pluralkit;
 mod tupperbox;
 
 use anyhow::{Error, Result};
