@@ -2,7 +2,9 @@ use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::futures_util::TryStreamExt;
 
-use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message, Webhook, WebhookId};
+use poise::serenity_prelude::{
+    AttachmentType, CacheHttp, Context as SerenityContext, Message, Webhook, WebhookId,
+};
 
 use crate::commands::Data;
 use crate::models::{DBChannel, DBMate};
@@ -78,6 +80,16 @@ async fn send_proxied_message(
         );
     }
 
+    let mut reattachments: Vec<AttachmentType> = vec![];
+
+    for attachment in message.attachments.iter() {
+        let download = attachment.download().await?;
+        reattachments.push(AttachmentType::Bytes {
+            data: std::borrow::Cow::Owned(download),
+            filename: attachment.filename.clone(),
+        });
+    }
+
     webhook
         .execute(ctx.http(), false, |msg| {
             msg.avatar_url(mate.avatar)
@@ -87,6 +99,7 @@ async fn send_proxied_message(
                     mate.name
                 })
                 .content(new_content)
+                .add_files(reattachments)
         })
         .await?;
     message.delete(ctx.http()).await?;
