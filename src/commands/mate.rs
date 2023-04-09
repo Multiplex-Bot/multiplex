@@ -113,7 +113,7 @@ pub async fn edit(
         let mut prefix: Option<String> = None;
         let mut postfix: Option<String> = None;
 
-        if let Some(selector) = selector {
+        if let Some(selector) = selector.clone() {
             let selector_iter: Vec<&str> = selector.split("text").collect();
             if selector_iter.len() == 1 {
                 if selector.starts_with("text") {
@@ -134,13 +134,13 @@ pub async fn edit(
             } else {
                 name.clone()
             },
-            prefix: if let Some(prefix) = prefix {
-                Some(prefix)
+            prefix: if let Some(selector) = selector.clone() {
+                prefix
             } else {
                 old_mate.prefix
             },
-            postfix: if let Some(postfix) = postfix {
-                Some(postfix)
+            postfix: if let Some(selector) = selector {
+                postfix
             } else {
                 old_mate.postfix
             },

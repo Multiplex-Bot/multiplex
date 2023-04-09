@@ -51,6 +51,7 @@ async fn main() {
                 commands::collective::edit_collective(),
                 commands::info::info(),
                 commands::import::import(),
+                commands::export::export(),
             ],
             pre_command: |ctx| {
                 Box::pin(async move {
