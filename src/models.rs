@@ -8,6 +8,7 @@ pub struct DBMate {
     pub autoproxy: bool,
     pub name: String,
     pub avatar: String,
+    pub is_public: bool,
     pub bio: Option<String>,
     pub prefix: Option<String>,
     pub postfix: Option<String>,
@@ -18,6 +19,7 @@ pub struct DBMate {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DBCollective {
     pub user_id: i64,
+    pub is_public: bool,
     pub name: Option<String>,
     pub bio: Option<String>,
     pub pronouns: Option<String>,

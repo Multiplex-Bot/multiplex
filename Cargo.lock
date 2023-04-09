@@ -963,6 +963,7 @@ dependencies = [
  "once_cell",
  "poise",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

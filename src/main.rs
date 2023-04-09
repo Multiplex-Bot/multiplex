@@ -1,6 +1,7 @@
 mod commands;
 mod event_handler;
 mod models;
+mod tupperbox;
 
 use anyhow::{Error, Result};
 use dotenvy::dotenv;
@@ -48,7 +49,15 @@ async fn main() {
                 commands::mate::switch(),
                 commands::collective::edit_collective(),
                 commands::info::info(),
+                commands::import::import(),
             ],
+            pre_command: |ctx| {
+                Box::pin(async move {
+                    ctx.defer_ephemeral()
+                        .await
+                        .expect("Failed to make response ephemeral");
+                })
+            },
             event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {
                     match event {

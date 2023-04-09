@@ -33,6 +33,10 @@ pub async fn info(
             .await;
 
         if let Ok(Some(mate)) = mate {
+            if !mate.is_public && ctx.author().id.0 as i64 != user_id {
+                return Err(anyhow::anyhow!("That mate doesn't exist!"));
+            }
+
             ctx.send(|b| {
                 b.embed(|mut final_embed| {
                     final_embed = final_embed.title(mate.display_name.unwrap_or(mate.name));
@@ -64,6 +68,7 @@ pub async fn info(
             name: Some(format!("{}'s Collective", user.unwrap().name)),
             bio: None,
             pronouns: None,
+            is_public: true,
         };
 
         let collectives_collection = database.collection::<DBCollective>("collectives");
@@ -74,6 +79,10 @@ pub async fn info(
             // NOTE: I've seen it error on both of these whenever there's not a result for the query, so I'm not sure which it actually should be
             .unwrap_or(Some(default_collective.clone()))
             .unwrap_or(default_collective);
+
+        if !collective.is_public && ctx.author().id.0 as i64 != user_id {
+            return Err(anyhow::anyhow!("That is a private collective!"));
+        }
 
         let mates = mates_collection
             .find(doc! {"user_id": user_id }, None)

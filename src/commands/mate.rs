@@ -1,3 +1,5 @@
+use std::primitive;
+
 use super::CommandContext;
 use crate::models::DBMate;
 use anyhow::{Context, Error, Result};
@@ -10,6 +12,9 @@ pub async fn create(
     ctx: CommandContext<'_>,
     #[description = "the name of the mate"] name: String,
     #[description = "the trigger for proxying (ie `[text]`)"] selector: String,
+    #[description = "whether to allow other people to use /info for this mate"] publicity: Option<
+        bool,
+    >,
     #[description = "the name to show in chat when proxying (otherwise use the full name)"]
     display_name: Option<String>,
     #[description = "an (optional) avatar to use when proxying"] avatar: Option<
@@ -59,6 +64,7 @@ pub async fn create(
         let mate = DBMate {
             user_id: ctx.author().id.0 as i64,
             name: name.clone(),
+            is_public: publicity.unwrap_or(true),
             prefix,
             postfix,
             avatar: avatar_url,
@@ -85,6 +91,9 @@ pub async fn edit(
     #[description = "the new name of the mate"] new_name: Option<String>,
     #[description = "the new trigger for proxying (ie `[text]`)"] selector: Option<String>,
     #[description = "the new name to show in chat when proxying"] display_name: Option<String>,
+    #[description = "whether to allow other people to use /info for this mate"] publicity: Option<
+        bool,
+    >,
     #[description = "the new avatar to use when proxying"] avatar: Option<serenity::Attachment>,
     #[description = "the mate's bio"] bio: Option<String>,
     #[description = "the mate's pronouns"] pronouns: Option<String>,
@@ -154,6 +163,11 @@ pub async fn edit(
                 Some(display_name)
             } else {
                 old_mate.display_name
+            },
+            is_public: if let Some(publicity) = publicity {
+                publicity
+            } else {
+                old_mate.is_public
             },
             autoproxy: old_mate.autoproxy,
         };

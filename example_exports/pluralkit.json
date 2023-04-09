@@ -1,0 +1,98 @@
+{
+    "version": 2,
+    "id": "uegph",
+    "uuid": "cede3c67-3d5c-48b4-84ae-897f1f006212",
+    "name": null,
+    "description": null,
+    "tag": null,
+    "pronouns": null,
+    "avatar_url": null,
+    "banner": null,
+    "color": null,
+    "created": "2023-04-07T22:18:04.430499Z",
+    "webhook_url": null,
+    "privacy": {
+        "description_privacy": "public",
+        "pronoun_privacy": "public",
+        "member_list_privacy": "public",
+        "group_list_privacy": "public",
+        "front_privacy": "public",
+        "front_history_privacy": "public"
+    },
+    "config": {
+        "timezone": "UTC",
+        "pings_enabled": true,
+        "latch_timeout": null,
+        "member_default_private": false,
+        "group_default_private": false,
+        "show_private_info": true,
+        "member_limit": 1000,
+        "group_limit": 250,
+        "case_sensitive_proxy_tags": true,
+        "description_templates": []
+    },
+    "accounts": [714583473804935238],
+    "members": [
+        {
+            "id": "efkuf",
+            "uuid": "7b65bffd-ccae-43d5-bb75-b8b2132681d2",
+            "name": "Test",
+            "display_name": null,
+            "color": null,
+            "birthday": null,
+            "pronouns": null,
+            "avatar_url": null,
+            "webhook_avatar_url": null,
+            "banner": null,
+            "description": null,
+            "created": "2023-04-07T22:18:19.242841Z",
+            "keep_proxy": false,
+            "autoproxy_enabled": true,
+            "message_count": 7,
+            "last_message_timestamp": "2023-04-08T18:45:03.270154Z",
+            "proxy_tags": [{ "prefix": "[", "suffix": "]" }],
+            "privacy": {
+                "visibility": "public",
+                "name_privacy": "public",
+                "description_privacy": "public",
+                "birthday_privacy": "public",
+                "pronoun_privacy": "public",
+                "avatar_privacy": "public",
+                "metadata_privacy": "public"
+            }
+        },
+        {
+            "id": "wpafk",
+            "uuid": "af5e8d0f-4188-4276-abf2-61c48113653e",
+            "name": "Test 2",
+            "display_name": null,
+            "color": null,
+            "birthday": null,
+            "pronouns": null,
+            "avatar_url": "https://cdn.discordapp.com/attachments/1029563507345195008/1094023611930656768/AmogOS-icon.png",
+            "webhook_avatar_url": null,
+            "banner": null,
+            "description": null,
+            "created": "2023-04-07T22:18:51.247061Z",
+            "keep_proxy": false,
+            "autoproxy_enabled": true,
+            "message_count": 1,
+            "last_message_timestamp": "2023-04-07T22:19:26.62543Z",
+            "proxy_tags": [{ "prefix": "(", "suffix": ")" }],
+            "privacy": {
+                "visibility": "public",
+                "name_privacy": "public",
+                "description_privacy": "public",
+                "birthday_privacy": "public",
+                "pronoun_privacy": "public",
+                "avatar_privacy": "public",
+                "metadata_privacy": "public"
+            }
+        }
+    ],
+    "groups": [],
+    "switches": [
+        { "timestamp": "2023-04-08T07:02:52.877281Z", "members": [] },
+        { "timestamp": "2023-04-08T07:01:59.205935Z", "members": ["efkuf"] }
+    ]
+}

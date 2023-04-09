@@ -10,6 +10,8 @@ pub async fn edit_collective(
     ctx: CommandContext<'_>,
     #[description = "the name of your collective"] name: Option<String>,
     #[description = "the bio of your collective"] bio: Option<String>,
+    #[description = "whether your collective should be viewable by others with /info"]
+    publicity: Option<bool>,
     #[description = "the collective pronouns of your collective"] pronouns: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
@@ -40,6 +42,11 @@ pub async fn edit_collective(
             } else {
                 old_collective.pronouns
             },
+            is_public: if let Some(publicity) = publicity {
+                publicity
+            } else {
+                old_collective.is_public
+            },
         };
     } else {
         collective = DBCollective {
@@ -47,6 +54,7 @@ pub async fn edit_collective(
             name,
             bio,
             pronouns,
+            is_public: true,
         }
     }
 

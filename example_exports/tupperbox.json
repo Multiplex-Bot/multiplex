@@ -1,0 +1,48 @@
+{
+    "tuppers": [
+        {
+            "id": 97225380,
+            "user_id": "714583473804935238",
+            "name": "Tupper2",
+            "position": 1,
+            "avatar_url": "",
+            "brackets": ["e", ""],
+            "posts": 0,
+            "show_brackets": false,
+            "birthday": "1969-04-20T00:00:00.000Z",
+            "description": "test\"",
+            "tag": "tag",
+            "group_id": 886834,
+            "group_pos": 0,
+            "created_at": "2023-04-08T00:00:00.000Z",
+            "nick": "Tupper2's Nick"
+        },
+        {
+            "id": 97225260,
+            "user_id": "714583473804935238",
+            "name": "Tupperbox Test",
+            "position": 0,
+            "avatar_url": "https://cdn.discordapp.com/attachments/1029563507345195008/1094401462756442152/AmogOS-icon.png",
+            "brackets": ["t!", "!t"],
+            "posts": 0,
+            "show_brackets": false,
+            "birthday": null,
+            "description": null,
+            "tag": null,
+            "group_id": null,
+            "group_pos": null,
+            "created_at": "2023-04-08T00:00:00.000Z",
+            "nick": null
+        }
+    ],
+    "groups": [
+        {
+            "id": 886834,
+            "user_id": "714583473804935238",
+            "name": "test",
+            "description": null,
+            "tag": null,
+            "position": 0
+        }
+    ]
+}
