@@ -94,5 +94,5 @@ async fn main() {
             })
         });
 
-    framework.run().await.unwrap();
+    framework.build().await.unwrap().start_autosharded().await.unwrap();
 }
