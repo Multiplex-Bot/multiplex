@@ -7,13 +7,14 @@ use poise::serenity_prelude::{
 };
 
 use crate::commands::Data;
-use crate::models::{DBChannel, DBMate};
+use crate::models::{DBChannel, DBCollective, DBMate};
 
 async fn send_proxied_message(
     ctx: &SerenityContext,
     message: &Message,
     channel: DBChannel,
     mate: DBMate,
+    collective: DBCollective,
 ) -> Result<()> {
     let webhook = Webhook::from_id_with_token(
         ctx.http(),
@@ -96,11 +97,15 @@ async fn send_proxied_message(
     webhook
         .execute(ctx.http(), false, |msg| {
             msg.avatar_url(mate.avatar)
-                .username(if let Some(display_name) = mate.display_name {
-                    display_name
-                } else {
-                    mate.name
-                })
+                .username(format!(
+                    "{} {}",
+                    if let Some(display_name) = mate.display_name {
+                        display_name
+                    } else {
+                        mate.name
+                    },
+                    collective.collective_tag.unwrap_or_default()
+                ))
                 .content(new_content)
                 .add_files(reattachments)
         })
@@ -115,6 +120,7 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
 
     let channels_collection = database.collection::<DBChannel>("channels");
     let mates_collection = database.collection::<DBMate>("mates");
+    let collectives_collection = database.collection::<DBCollective>("collectives");
 
     let dbchannel = channels_collection
         .find_one(doc! {"id": message.channel_id.0 as i64}, None)
@@ -156,6 +162,21 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
 
     let mates = mates.try_collect::<Vec<DBMate>>().await?;
 
+    let default_collective = DBCollective {
+        user_id: message.author.id.0 as i64,
+        name: None,
+        bio: None,
+        pronouns: None,
+        collective_tag: None,
+        is_public: true,
+    };
+
+    let collective = collectives_collection
+        .find_one(doc! { "user_id": message.author.id.0 as i64 }, None)
+        .await
+        .unwrap_or(Some(default_collective.clone()))
+        .unwrap_or(default_collective);
+
     let mut did_proxy = false;
 
     for mate in mates.clone() {
@@ -166,7 +187,7 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
                 .content
                 .ends_with(&mate.postfix.clone().unwrap_or_default())
         {
-            send_proxied_message(ctx, message, channel.clone(), mate).await?;
+            send_proxied_message(ctx, message, channel.clone(), mate, collective.clone()).await?;
 
             did_proxy = true;
             break;
@@ -176,7 +197,7 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
     if !did_proxy {
         for mate in mates {
             if mate.autoproxy {
-                send_proxied_message(ctx, message, channel.clone(), mate).await?;
+                send_proxied_message(ctx, message, channel.clone(), mate, collective).await?;
                 break;
             }
         }

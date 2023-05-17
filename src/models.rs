@@ -21,6 +21,7 @@ pub struct DBCollective {
     pub name: Option<String>,
     pub bio: Option<String>,
     pub pronouns: Option<String>,
+    pub collective_tag: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

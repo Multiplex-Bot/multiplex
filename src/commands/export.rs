@@ -42,6 +42,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
         name: None,
         bio: None,
         pronouns: None,
+        collective_tag: None,
         is_public: true,
     };
 

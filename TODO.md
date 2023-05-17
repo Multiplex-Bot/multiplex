@@ -1,0 +1,5 @@
+- [] Message editing
+- [] System tags
+- [] Message metadata storage (for moderation/statistics)
+- [] Collective activity logs
+- [] Dashboard(?)

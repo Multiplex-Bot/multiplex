@@ -68,6 +68,7 @@ pub async fn info(
             name: Some(format!("{}'s Collective", user.unwrap().name)),
             bio: None,
             pronouns: None,
+            collective_tag: None,
             is_public: true,
         };
 

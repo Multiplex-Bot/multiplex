@@ -126,6 +126,8 @@ pub async fn collective(
     #[description = "whether your collective should be viewable by others with /info"]
     publicity: Option<bool>,
     #[description = "the collective pronouns of your collective"] pronouns: Option<String>,
+    #[description = "A tag to append to all proxied mates, to identify your collective in chat"]
+    collective_tag: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
 
@@ -160,6 +162,11 @@ pub async fn collective(
             } else {
                 old_collective.is_public
             },
+            collective_tag: if let Some(collective_tag) = collective_tag {
+                Some(collective_tag)
+            } else {
+                old_collective.collective_tag
+            },
         };
     } else {
         collective = DBCollective {
@@ -167,6 +174,7 @@ pub async fn collective(
             name,
             bio,
             pronouns,
+            collective_tag,
             is_public: true,
         }
     }

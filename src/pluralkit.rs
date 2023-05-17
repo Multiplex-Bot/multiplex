@@ -34,6 +34,7 @@ impl PluralkitExport {
             name: self.name.clone(),
             bio: self.description.clone(),
             pronouns: self.pronouns.clone(),
+            collective_tag: None,
         })
     }
 }
