@@ -1,7 +1,7 @@
 use super::CommandContext;
 use crate::{
     commands::UPSERT_OPTIONS,
-    models::{DBCollective, DBMate},
+    models::{DBCollective, DBCollective__new, DBMate, DBMate__new},
 };
 use anyhow::Result;
 use mongodb::bson::{self, doc};
@@ -56,49 +56,49 @@ pub async fn mate(
             }
         }
 
-        let mate = DBMate {
-            user_id: ctx.author().id.0 as i64,
-            name: if let Some(new_name) = new_name {
+        let mate = DBMate__new! {
+            user_id = ctx.author().id.0 as i64,
+            name = if let Some(new_name) = new_name {
                 new_name
             } else {
                 name.clone()
             },
-            prefix: if let Some(_selector) = selector.clone() {
+            prefix = if let Some(_selector) = selector.clone() {
                 prefix
             } else {
                 old_mate.prefix
             },
-            postfix: if let Some(_selector) = selector {
+            postfix = if let Some(_selector) = selector {
                 postfix
             } else {
                 old_mate.postfix
             },
-            avatar: if let Some(avatar) = avatar {
+            avatar = if let Some(avatar) = avatar {
                 avatar.url
             } else {
                 old_mate.avatar
             },
-            bio: if let Some(bio) = bio {
+            bio = if let Some(bio) = bio {
                 Some(bio)
             } else {
                 old_mate.bio
             },
-            pronouns: if let Some(pronouns) = pronouns {
+            pronouns = if let Some(pronouns) = pronouns {
                 Some(pronouns)
             } else {
                 old_mate.pronouns
             },
-            display_name: if let Some(display_name) = display_name {
+            display_name = if let Some(display_name) = display_name {
                 Some(display_name)
             } else {
                 old_mate.display_name
             },
-            is_public: if let Some(publicity) = publicity {
+            is_public = if let Some(publicity) = publicity {
                 publicity
             } else {
                 old_mate.is_public
             },
-            autoproxy: old_mate.autoproxy,
+            autoproxy = old_mate.autoproxy,
         };
 
         mates_collection
@@ -140,42 +140,42 @@ pub async fn collective(
     let collective;
 
     if let Ok(Some(old_collective)) = old_collective {
-        collective = DBCollective {
-            user_id: old_collective.user_id,
-            name: if let Some(name) = name {
+        collective = DBCollective__new! {
+            user_id = old_collective.user_id,
+            name = if let Some(name) = name {
                 Some(name)
             } else {
                 old_collective.name
             },
-            bio: if let Some(bio) = bio {
+            bio = if let Some(bio) = bio {
                 Some(bio)
             } else {
                 old_collective.bio
             },
-            pronouns: if let Some(pronouns) = pronouns {
+            pronouns = if let Some(pronouns) = pronouns {
                 Some(pronouns)
             } else {
                 old_collective.pronouns
             },
-            is_public: if let Some(publicity) = publicity {
+            is_public = if let Some(publicity) = publicity {
                 publicity
             } else {
                 old_collective.is_public
             },
-            collective_tag: if let Some(collective_tag) = collective_tag {
+            collective_tag = if let Some(collective_tag) = collective_tag {
                 Some(collective_tag)
             } else {
                 old_collective.collective_tag
             },
         };
     } else {
-        collective = DBCollective {
-            user_id: ctx.author().id.0 as i64,
+        collective = DBCollective__new! {
+            user_id = ctx.author().id.0 as i64,
             name,
             bio,
             pronouns,
             collective_tag,
-            is_public: true,
+            is_public = true,
         }
     }
 

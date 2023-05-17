@@ -7,7 +7,7 @@ use poise::serenity_prelude::{
 };
 
 use crate::commands::Data;
-use crate::models::{DBChannel, DBCollective, DBMate};
+use crate::models::{DBChannel, DBCollective, DBCollective__new, DBMate};
 
 async fn send_proxied_message(
     ctx: &SerenityContext,
@@ -162,13 +162,9 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
 
     let mates = mates.try_collect::<Vec<DBMate>>().await?;
 
-    let default_collective = DBCollective {
-        user_id: message.author.id.0 as i64,
-        name: None,
-        bio: None,
-        pronouns: None,
-        collective_tag: None,
-        is_public: true,
+    let default_collective = DBCollective__new! {
+        user_id = message.author.id.0 as i64,
+        is_public = true,
     };
 
     let collective = collectives_collection
