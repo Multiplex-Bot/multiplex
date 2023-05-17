@@ -1,4 +1,4 @@
-use crate::models::{DBCollective, DBMate};
+use crate::models::{DBCollective, DBCollective__new, DBMate, DBMate__new};
 use anyhow::Result;
 use poise::serenity_prelude::UserId;
 use serde::{Deserialize, Serialize};
@@ -28,13 +28,13 @@ pub struct PluralkitExport {
 
 impl PluralkitExport {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
-        Ok(DBCollective {
-            user_id: user_id.0 as i64,
-            is_public: !serde_json::to_string(&self.privacy)?.contains("\"private\""),
-            name: self.name.clone(),
-            bio: self.description.clone(),
-            pronouns: self.pronouns.clone(),
-            collective_tag: None,
+        Ok(DBCollective__new! {
+            user_id= user_id.0 as i64,
+            is_public= !serde_json::to_string(&self.privacy)?.contains("\"private\""),
+            name= self.name.clone(),
+            bio= self.description.clone(),
+            pronouns= self.pronouns.clone(),
+            collective_tag= None,
         })
     }
 }
@@ -87,20 +87,20 @@ pub struct Member {
 
 impl Member {
     pub fn to_mate(&self, user_id: UserId) -> Result<DBMate> {
-        Ok(DBMate {
-            user_id: user_id.0 as i64,
-            autoproxy: false,
-            name: self.name.clone(),
-            avatar: self
-                .avatar_url
-                .clone()
-                .unwrap_or(std::env::var("DEFAULT_AVATAR_URL").unwrap()),
-            bio: self.description.clone(),
-            prefix: self.proxy_tags[0].prefix.clone(),
-            postfix: self.proxy_tags[0].suffix.clone(),
-            pronouns: self.pronouns.clone(),
-            display_name: self.display_name.clone(),
-            is_public: !serde_json::to_string(&self.privacy)?.contains("\"private\""),
+        Ok(DBMate__new! {
+                user_id = user_id.0 as i64,
+                autoproxy = false,
+                name = self.name.clone(),
+                avatar = self
+                    .avatar_url
+                    .clone()
+                    .unwrap_or(std::env::var("DEFAULT_AVATAR_URL").unwrap()),
+                bio = self.description.clone(),
+                prefix = self.proxy_tags[0].prefix.clone(),
+                postfix = self.proxy_tags[0].suffix.clone(),
+                pronouns = self.pronouns.clone(),
+                display_name = self.display_name.clone(),
+                is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
         })
     }
 }

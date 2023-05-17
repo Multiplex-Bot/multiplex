@@ -1,5 +1,5 @@
 use super::CommandContext;
-use crate::models::DBMate;
+use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
 use mongodb::bson::doc;
 use poise::serenity_prelude::{self as serenity};
@@ -59,17 +59,17 @@ pub async fn create(
             avatar_url = std::env::var("DEFAULT_AVATAR_URL").unwrap();
         }
 
-        let mate = DBMate {
-            user_id: ctx.author().id.0 as i64,
-            name: name.clone(),
-            is_public: publicity.unwrap_or(true),
+        let mate = DBMate__new! {
+            user_id = ctx.author().id.0 as i64,
+            name = name.clone(),
+            is_public = publicity.unwrap_or(true),
             prefix,
             postfix,
-            avatar: avatar_url,
+            avatar = avatar_url,
             bio,
             pronouns,
             display_name,
-            autoproxy: false,
+            autoproxy = false,
         };
 
         mates_collection.insert_one(mate, None).await?;

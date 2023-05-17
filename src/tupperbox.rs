@@ -1,4 +1,4 @@
-use crate::models::DBMate;
+use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -28,29 +28,28 @@ pub struct Tupper {
 
 impl Tupper {
     pub fn to_mate(&self) -> Result<DBMate> {
-        Ok(DBMate {
-            user_id: self.user_id.parse::<i64>()?,
-            autoproxy: false,
-            name: self.name.clone(),
-            avatar: if !self.avatar_url.is_empty() {
+        Ok(DBMate__new! {
+            user_id = self.user_id.parse::<i64>()?,
+            autoproxy = false,
+            name = self.name.clone(),
+            avatar = if !self.avatar_url.is_empty() {
                 self.avatar_url.clone()
             } else {
                 std::env::var("DEFAULT_AVATAR_URL").unwrap()
             },
-            is_public: true,
-            bio: self.description.clone(),
-            prefix: if !self.brackets[0].is_empty() {
+            is_public = true,
+            bio = self.description.clone(),
+            prefix = if !self.brackets[0].is_empty() {
                 Some(self.brackets[0].clone())
             } else {
                 None
             },
-            postfix: if !self.brackets[1].is_empty() {
+            postfix = if !self.brackets[1].is_empty() {
                 Some(self.brackets[1].clone())
             } else {
                 None
             },
-            pronouns: None,
-            display_name: self.nick.clone(),
+            display_name = self.nick.clone(),
         })
     }
 }
