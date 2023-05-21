@@ -1061,9 +1061,9 @@ dependencies = [
 
 [[package]]
 name = "orderless"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad98e7a704902120f218a32a17d432fbc88b2e9b58f904d7f8b0f84902ef0155"
+checksum = "926bdd1c5882513a9dea029c2f7fc16ef0882f7766ebc20fadf4a67215c2fe42"
 dependencies = [
  "darling 0.20.1",
  "indexmap",
