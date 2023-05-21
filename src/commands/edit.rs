@@ -4,8 +4,14 @@ use crate::{
     models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMate__new, DBMessage},
 };
 use anyhow::{Context, Result};
-use mongodb::bson::{self, doc};
-use poise::serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId};
+use mongodb::{
+    bson::{self, doc},
+    options::{FindOneOptions, FindOptions},
+};
+use poise::{
+    futures_util::TryStreamExt,
+    serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId},
+};
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
 pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {
@@ -218,8 +224,14 @@ pub async fn message(
         let message_id = iter.last().context("Failed to get message ID from link!")?;
         message_to_edit_id = MessageId(message_id.parse::<u64>()?)
     } else {
-        ctx.say("TODO: implement this").await?;
-        return Ok(());
+        let message = messages_collection
+            .find_one(
+                doc! { "user_id": ctx.author().id.0 as i64 },
+                Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
+            )
+            .await?
+            .context("Failed to get most recent message!")?;
+        message_to_edit_id = MessageId(message.message_id)
     }
 
     messages_collection
