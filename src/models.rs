@@ -92,3 +92,9 @@ pub struct DBChannel {
     pub webhook_id: i64,
     pub webhook_token: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DBMessage {
+    pub user_id: u64,
+    pub message_id: u64,
+}

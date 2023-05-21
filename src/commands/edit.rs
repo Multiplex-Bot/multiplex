@@ -1,13 +1,13 @@
 use super::CommandContext;
 use crate::{
     commands::UPSERT_OPTIONS,
-    models::{DBCollective, DBCollective__new, DBMate, DBMate__new},
+    models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMate__new, DBMessage},
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use mongodb::bson::{self, doc};
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId};
 
-#[poise::command(slash_command, subcommands("mate", "collective"))]
+#[poise::command(slash_command, subcommands("mate", "collective", "message"))]
 pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {
     unreachable!()
 }
@@ -188,6 +188,60 @@ pub async fn collective(
         .await?;
 
     ctx.say("Successfully updated your collective!").await?;
+
+    Ok(())
+}
+
+/// Edit a proxied message in the current channel (if none is specified, edit the most recent one)
+#[poise::command(slash_command)]
+pub async fn message(
+    ctx: CommandContext<'_>,
+    #[description = "The new message content"] content: String,
+    #[description = "The raw ID of the message to edit"] message_id: Option<String>,
+    #[description = "A link to the message to edit"] message_link: Option<String>,
+) -> Result<()> {
+    let database = &ctx.data().database;
+    let channels_collection = database.collection::<DBChannel>("channels");
+    let messages_collection = database.collection::<DBMessage>("messages");
+
+    let channel = channels_collection
+        .find_one(doc! {"id": ctx.channel_id().0 as i64}, None)
+        .await?
+        .context("oopsie daisy")?;
+
+    let message_to_edit_id;
+    if let Some(message_id) = message_id {
+        message_to_edit_id = MessageId(message_id.parse::<u64>()?)
+    } else if let Some(message_link) = message_link {
+        // https://discord.com/channels/891039687785996328/1008966348862390312/1109539731655626763 -> 1109539731655626763
+        let iter = message_link.split("/");
+        let message_id = iter.last().context("Failed to get message ID from link!")?;
+        message_to_edit_id = MessageId(message_id.parse::<u64>()?)
+    } else {
+        ctx.say("TODO: implement this").await?;
+        return Ok(());
+    }
+
+    messages_collection
+        .find_one(
+            doc! { "message_id": i64::from(message_to_edit_id), "user_id": ctx.author().id.0 as i64 },
+            None,
+        )
+        .await?
+        .context("Sorry, the proxied message is not available; leave a message at the tone.")?;
+
+    let webhook = Webhook::from_id_with_token(
+        ctx.http(),
+        WebhookId(channel.webhook_id as u64),
+        &channel.webhook_token,
+    )
+    .await?;
+
+    webhook
+        .edit_message(ctx.http(), message_to_edit_id, |b| b.content(content))
+        .await?;
+
+    ctx.say("Edited message!").await?;
 
     Ok(())
 }

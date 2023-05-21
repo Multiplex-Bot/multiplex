@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use mongodb::bson::doc;
+use mongodb::Database;
 use poise::futures_util::TryStreamExt;
 
 use poise::serenity_prelude::{
@@ -7,7 +8,7 @@ use poise::serenity_prelude::{
 };
 
 use crate::commands::Data;
-use crate::models::{DBChannel, DBCollective, DBCollective__new, DBMate};
+use crate::models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage};
 
 async fn send_proxied_message(
     ctx: &SerenityContext,
@@ -15,7 +16,10 @@ async fn send_proxied_message(
     channel: DBChannel,
     mate: DBMate,
     collective: DBCollective,
+    database: &Database,
 ) -> Result<()> {
+    let messages_collection = database.collection::<DBMessage>("messages");
+
     let webhook = Webhook::from_id_with_token(
         ctx.http(),
         WebhookId(channel.webhook_id as u64),
@@ -25,14 +29,12 @@ async fn send_proxied_message(
 
     let mut new_content = message.content.clone();
 
-    if !mate.autoproxy {
-        new_content = new_content
-            .strip_prefix(&mate.prefix.clone().unwrap_or_default())
-            .unwrap()
-            .strip_suffix(&mate.postfix.clone().unwrap_or_default())
-            .unwrap()
-            .to_string();
-    }
+    new_content = new_content
+        .strip_prefix(&mate.prefix.clone().unwrap_or_default())
+        .unwrap_or(&new_content)
+        .strip_suffix(&mate.postfix.clone().unwrap_or_default())
+        .unwrap_or(&new_content)
+        .to_string();
 
     if let Some(referenced_message) = &message.referenced_message {
         // FIXME: this whole reply system is *really* jank, and will break if anyone uses a zero-width space in a message.
@@ -94,8 +96,8 @@ async fn send_proxied_message(
         });
     }
 
-    webhook
-        .execute(ctx.http(), false, |msg| {
+    let new_message = webhook
+        .execute(ctx.http(), true, |msg| {
             msg.avatar_url(mate.avatar)
                 .username(format!(
                     "{} {}",
@@ -109,8 +111,19 @@ async fn send_proxied_message(
                 .content(new_content)
                 .add_files(reattachments)
         })
-        .await?;
+        .await?
+        .context("Failed to send webhook message (I think)")?;
     message.delete(ctx.http()).await?;
+
+    messages_collection
+        .insert_one(
+            DBMessage {
+                message_id: new_message.id.0,
+                user_id: message.author.id.0,
+            },
+            None,
+        )
+        .await?;
 
     Ok(())
 }
@@ -183,7 +196,15 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
                 .content
                 .ends_with(&mate.postfix.clone().unwrap_or_default())
         {
-            send_proxied_message(ctx, message, channel.clone(), mate, collective.clone()).await?;
+            send_proxied_message(
+                ctx,
+                message,
+                channel.clone(),
+                mate,
+                collective.clone(),
+                database,
+            )
+            .await?;
 
             did_proxy = true;
             break;
@@ -193,7 +214,9 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
     if !did_proxy {
         for mate in mates {
             if mate.autoproxy {
-                send_proxied_message(ctx, message, channel.clone(), mate, collective).await?;
+                send_proxied_message(ctx, message, channel.clone(), mate, collective, database)
+                    .await?;
+                did_proxy = true;
                 break;
             }
         }
