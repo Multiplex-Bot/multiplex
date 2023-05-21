@@ -1,4 +1,4 @@
-use orderless::create_orderless;
+use orderless::{create_orderless, impl_orderless, make_orderless};
 
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +16,12 @@ pub struct DBMate {
     pub display_name: Option<String>,
 }
 
+#[impl_orderless]
 impl DBMate {
+    #[make_orderless(
+        public = true,
+        defs(user_id, autoproxy, name, avatar, is_public, bio = None, prefix = None, postfix = None, pronouns = None, display_name = None),
+    )]
     pub fn new(
         user_id: i64,
         autoproxy: bool,
@@ -44,12 +49,6 @@ impl DBMate {
     }
 }
 
-create_orderless! {
-    public = true,
-    func = DBMate::new,
-    defs(user_id, autoproxy, name, avatar, is_public, bio = None, prefix = None, postfix = None, pronouns = None, display_name = None),
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DBCollective {
     pub user_id: i64,
@@ -60,7 +59,12 @@ pub struct DBCollective {
     pub collective_tag: Option<String>,
 }
 
+#[impl_orderless]
 impl DBCollective {
+    #[make_orderless(
+        public = true,
+        defs(user_id, is_public, name = None, bio = None, pronouns = None, collective_tag = None),
+    )]
     pub fn new(
         user_id: i64,
         is_public: bool,
@@ -78,12 +82,6 @@ impl DBCollective {
             collective_tag,
         }
     }
-}
-
-create_orderless! {
-    public = true,
-    func = DBCollective::new,
-    defs(user_id, is_public, name = None, bio = None, pronouns = None, collective_tag = None),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
