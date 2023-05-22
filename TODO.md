@@ -1,6 +1,7 @@
 - [x] Message editing
 - [x] System tags
 - [x] Message metadata storage (for moderation/statistics)
-- [] Collective activity logs
-- [] Dashboard(?)
-- [] Editing real messages to resend them as proxied
+- [ ] Collective activity logs
+- [ ] Dashboard(?)
+- [ ] Editing real messages to resend them as proxied
+- [ ] Work in Text-In-Voice channels (tup or pk do?)
