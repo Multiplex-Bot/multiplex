@@ -20,7 +20,7 @@ pub struct DBMate {
 impl DBMate {
     #[make_orderless(
         public = true,
-        defs(user_id, autoproxy, name, avatar, is_public, bio = None, prefix = None, postfix = None, pronouns = None, display_name = None),
+        defs(bio = None, prefix = None, postfix = None, pronouns = None, display_name = None),
     )]
     pub fn new(
         user_id: i64,
@@ -63,7 +63,7 @@ pub struct DBCollective {
 impl DBCollective {
     #[make_orderless(
         public = true,
-        defs(user_id, is_public, name = None, bio = None, pronouns = None, collective_tag = None),
+        defs(name = None, bio = None, pronouns = None, collective_tag = None),
     )]
     pub fn new(
         user_id: i64,
