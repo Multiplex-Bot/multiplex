@@ -4,7 +4,8 @@ use mongodb::Database;
 use poise::futures_util::TryStreamExt;
 
 use poise::serenity_prelude::{
-    AttachmentType, CacheHttp, Context as SerenityContext, Message, Webhook, WebhookId,
+    AttachmentType, CacheHttp, Context as SerenityContext, Message, MessageUpdateEvent, Webhook,
+    WebhookId,
 };
 
 use crate::commands::Data;
@@ -124,6 +125,105 @@ async fn send_proxied_message(
             None,
         )
         .await?;
+
+    Ok(())
+}
+
+pub async fn on_edit(
+    ctx: &SerenityContext,
+    data: &Data,
+    message: &MessageUpdateEvent,
+) -> Result<()> {
+    let database = &data.database;
+
+    let channels_collection = database.collection::<DBChannel>("channels");
+    let mates_collection = database.collection::<DBMate>("mates");
+    let collectives_collection = database.collection::<DBCollective>("collectives");
+
+    let dbchannel = channels_collection
+        .find_one(doc! {"id": message.channel_id.0 as i64}, None)
+        .await;
+
+    let channel;
+
+    if let Ok(Some(dbchannel)) = dbchannel {
+        channel = dbchannel;
+    } else {
+        let guild_channel = ctx
+            .http()
+            .get_channel(message.channel_id.0)
+            .await?
+            .guild()
+            .context("Failed to get guild channel")?;
+
+        let webhook = guild_channel
+            .create_webhook(ctx.http(), "Multiplex Proxier")
+            .await
+            .context("Failed to create webhook")?;
+
+        channel = DBChannel {
+            id: guild_channel.id.0 as i64,
+            webhook_id: webhook.id.0 as i64,
+            webhook_token: webhook.token.unwrap(),
+        };
+
+        channels_collection
+            .insert_one(channel.clone(), None)
+            .await
+            .context("Failed to write channel webhook to DB")?;
+    }
+
+    let mates = mates_collection
+        .find(
+            doc! {"user_id": message.author
+            .clone().unwrap().id.0 as i64 },
+            None,
+        )
+        .await
+        .context("Failed to get user's mates")?;
+
+    let mates = mates.try_collect::<Vec<DBMate>>().await?;
+
+    let default_collective = DBCollective__new! {
+        user_id = message.author
+        .clone().unwrap().id.0 as i64,
+        is_public = true,
+    };
+
+    let collective = collectives_collection
+        .find_one(
+            doc! { "user_id": message.author
+            .clone().unwrap().id.0 as i64 },
+            None,
+        )
+        .await
+        .unwrap_or(Some(default_collective.clone()))
+        .unwrap_or(default_collective);
+
+    for mate in mates.clone() {
+        if message
+            .content
+            .clone()
+            .unwrap()
+            .starts_with(&mate.prefix.clone().unwrap_or_default())
+            && message
+                .content
+                .clone()
+                .unwrap()
+                .ends_with(&mate.postfix.clone().unwrap_or_default())
+        {
+            /* send_proxied_message(
+                ctx,
+                message,
+                channel.clone(),
+                mate,
+                collective.clone(),
+                database,
+            )
+            .await?; */
+            break;
+        }
+    }
 
     Ok(())
 }

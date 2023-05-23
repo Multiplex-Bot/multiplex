@@ -62,6 +62,11 @@ async fn main() {
                         poise::Event::Message { new_message } => {
                             event_handler::on_message(ctx, data, new_message).await?
                         }
+                        poise::Event::MessageUpdate {
+                            old_if_available,
+                            new,
+                            event,
+                        } => event_handler::on_edit(ctx, data, event).await?,
                         _ => {}
                     }
 
@@ -94,5 +99,11 @@ async fn main() {
             })
         });
 
-    framework.build().await.unwrap().start_autosharded().await.unwrap();
+    framework
+        .build()
+        .await
+        .unwrap()
+        .start_autosharded()
+        .await
+        .unwrap();
 }
