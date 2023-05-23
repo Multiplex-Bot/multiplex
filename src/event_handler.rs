@@ -4,8 +4,8 @@ use mongodb::Database;
 use poise::futures_util::TryStreamExt;
 
 use poise::serenity_prelude::{
-    AttachmentType, CacheHttp, Context as SerenityContext, Message, MessageUpdateEvent, Webhook,
-    WebhookId,
+    webhook, AttachmentType, CacheHttp, Channel, ChannelType, Context as SerenityContext, Message,
+    MessageUpdateEvent, Webhook, WebhookId,
 };
 
 use crate::commands::Data;
@@ -252,9 +252,13 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
             .context("Failed to get channel's guild channel")?;
 
         let webhook = guild_channel
+            .id
             .create_webhook(ctx.http(), "Multiplex Proxier")
-            .await
-            .context("Failed to create webhook")?;
+            .await;
+
+        println!("{:?}", webhook);
+
+        let webhook = webhook.context("Failed to create webhook")?;
 
         channel = DBChannel {
             id: guild_channel.id.0 as i64,
