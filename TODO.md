@@ -3,5 +3,5 @@
 - [x] Message metadata storage (for moderation/statistics)
 - [ ] Collective activity logs
 - [ ] Dashboard(?)
-- [ ] Editing real messages to resend them as proxied
-- [ ] Work in Text-In-Voice channels (tup or pk do?)
+- [x] Editing real messages to resend them as proxied
+- [x] Work in Text-In-Voice channels (tup or pk do?)

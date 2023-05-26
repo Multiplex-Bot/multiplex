@@ -175,8 +175,7 @@ pub async fn on_edit(
 
     let mates = mates_collection
         .find(
-            doc! {"user_id": message.author
-            .clone().unwrap().id.0 as i64 },
+            doc! {"user_id": message.author.clone().unwrap().id.0 as i64 },
             None,
         )
         .await
@@ -185,15 +184,13 @@ pub async fn on_edit(
     let mates = mates.try_collect::<Vec<DBMate>>().await?;
 
     let default_collective = DBCollective__new! {
-        user_id = message.author
-        .clone().unwrap().id.0 as i64,
+        user_id = message.author.clone().unwrap().id.0 as i64,
         is_public = true,
     };
 
     let collective = collectives_collection
         .find_one(
-            doc! { "user_id": message.author
-            .clone().unwrap().id.0 as i64 },
+            doc! { "user_id": message.author.clone().unwrap().id.0 as i64 },
             None,
         )
         .await
@@ -212,15 +209,19 @@ pub async fn on_edit(
                 .unwrap()
                 .ends_with(&mate.postfix.clone().unwrap_or_default())
         {
-            /* send_proxied_message(
+            let message = ctx
+                .http()
+                .get_message(message.channel_id.0, message.id.0)
+                .await?;
+            send_proxied_message(
                 ctx,
-                message,
+                &message,
                 channel.clone(),
                 mate,
                 collective.clone(),
                 database,
             )
-            .await?; */
+            .await?;
             break;
         }
     }

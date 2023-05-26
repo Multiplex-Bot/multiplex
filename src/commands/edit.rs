@@ -6,12 +6,9 @@ use crate::{
 use anyhow::{Context, Result};
 use mongodb::{
     bson::{self, doc},
-    options::{FindOneOptions, FindOptions},
+    options::FindOneOptions,
 };
-use poise::{
-    futures_util::TryStreamExt,
-    serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId},
-};
+use poise::serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId};
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
 pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {
