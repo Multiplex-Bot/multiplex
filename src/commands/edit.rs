@@ -77,7 +77,15 @@ pub async fn mate(
                 old_mate.postfix
             },
             avatar = if let Some(avatar) = avatar {
-                avatar.url
+                let new_message = ctx
+                    .http()
+                    .send_files(
+                        std::env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?,
+                        vec![(&*avatar.download().await?, avatar.filename.as_str())],
+                        &serde_json::Map::new(),
+                    )
+                    .await?;
+                new_message.attachments[0].url.clone()
             } else {
                 old_mate.avatar
             },

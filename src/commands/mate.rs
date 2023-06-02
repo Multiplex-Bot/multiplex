@@ -2,7 +2,9 @@ use super::CommandContext;
 use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
 use mongodb::bson::doc;
-use poise::serenity_prelude::{self as serenity};
+use poise::serenity_prelude::{self as serenity, CacheHttp};
+use serde_json::json;
+use std::env;
 
 /// Register a new mate
 #[poise::command(slash_command)]
@@ -54,7 +56,15 @@ pub async fn create(
         let avatar_url;
 
         if let Some(avatar) = avatar {
-            avatar_url = avatar.url
+            let new_message = ctx
+                .http()
+                .send_files(
+                    env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?,
+                    vec![(&*avatar.download().await?, avatar.filename.as_str())],
+                    &serde_json::Map::new(),
+                )
+                .await?;
+            avatar_url = new_message.attachments[0].url.clone();
         } else {
             avatar_url = std::env::var("DEFAULT_AVATAR_URL").unwrap();
         }
