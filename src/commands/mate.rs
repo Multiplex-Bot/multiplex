@@ -145,36 +145,3 @@ pub async fn switch(
 
     Ok(())
 }
-
-/// Delete a mate
-#[poise::command(slash_command)]
-pub async fn delete(
-    ctx: CommandContext<'_>,
-    #[description = "the name of the mate"] name: String,
-) -> Result<()> {
-    let database = &ctx.data().database;
-
-    let mates_collection = database.collection::<DBMate>("mates");
-
-    let old_mate = mates_collection
-        .find_one(
-            doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
-            None,
-        )
-        .await;
-
-    if let Ok(Some(_)) = old_mate {
-        mates_collection
-            .delete_one(
-                doc! { "user_id": ctx.author().id.0 as i64,"name": name.clone() },
-                None,
-            )
-            .await?;
-        ctx.say(format!("{} has been removed. o7", name)).await?;
-    } else {
-        ctx.say("You need a mate with that name to remove them!")
-            .await?;
-    }
-
-    Ok(())
-}

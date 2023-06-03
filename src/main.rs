@@ -39,7 +39,7 @@ async fn main() {
                 commands::stats::ping(),
                 commands::stats::stats(),
                 commands::mate::create(),
-                commands::mate::delete(),
+                commands::delete::delete(),
                 commands::mate::switch(),
                 commands::edit::edit(),
                 commands::info::info(),
