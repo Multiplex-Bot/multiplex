@@ -118,11 +118,11 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
                 }
             })
             .collect::<Vec<Member>>(),
+        tag: collective.collective_tag,
         // useless pluralkit garbage
         avatar_url: None,
         id: "".to_string(),
         uuid: "".to_string(),
-        tag: None,
         banner: None,
         color: None,
         created: "".to_string(),

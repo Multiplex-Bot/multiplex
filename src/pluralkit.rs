@@ -29,12 +29,12 @@ pub struct PluralkitExport {
 impl PluralkitExport {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
         Ok(DBCollective__new! {
-            user_id= user_id.0 as i64,
-            is_public= !serde_json::to_string(&self.privacy)?.contains("\"private\""),
-            name= self.name.clone(),
-            bio= self.description.clone(),
-            pronouns= self.pronouns.clone(),
-            collective_tag= None,
+            user_id = user_id.0 as i64,
+            is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
+            name = self.name.clone(),
+            bio = self.description.clone(),
+            pronouns = self.pronouns.clone(),
+            collective_tag = self.tag.clone(),
         })
     }
 }
