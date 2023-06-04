@@ -67,6 +67,9 @@ async fn main() {
                             new,
                             event,
                         } => event_handler::on_edit(ctx, data, event).await?,
+                        poise::Event::ReactionAdd { add_reaction } => {
+                            event_handler::on_reaction(ctx, data, add_reaction).await?
+                        }
                         _ => {}
                     }
 
