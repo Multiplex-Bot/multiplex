@@ -145,7 +145,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     };
 
     ctx.send(|b| {
-        b.attachment(serenity_prelude::AttachmentType::Bytes {
+        b.content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(serenity_prelude::AttachmentType::Bytes {
             data: serde_json::to_vec(&export).unwrap().into(),
             filename: "multiplex-export.json".to_string(),
         })
