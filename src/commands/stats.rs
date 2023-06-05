@@ -19,11 +19,12 @@ pub async fn stats(ctx: CommandContext<'_>) -> Result<()> {
         .distinct("user_id", None, None)
         .await?
         .len();
+    let mate_count = mates_collection.count_documents(None, None).await?;
     let guild_count = cache.guild_count();
 
     ctx.say(format!(
-        "Serving **{}** users and **{}** guilds!",
-        user_count, guild_count,
+        "Serving **{}** users (with **{}** mates) in **{}** guilds!",
+        user_count, mate_count, guild_count,
     ))
     .await?;
 
