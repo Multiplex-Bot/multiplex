@@ -80,7 +80,7 @@ pub struct Member {
     pub keep_proxy: bool,
     pub autoproxy_enabled: bool,
     pub message_count: i64,
-    pub last_message_timestamp: String,
+    pub last_message_timestamp: Option<String>,
     pub proxy_tags: Vec<ProxyTag>,
     pub privacy: MemberPrivacy,
 }

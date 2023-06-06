@@ -112,7 +112,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
                     webhook_avatar_url: None,
                     created: "".to_string(),
                     message_count: 0,
-                    last_message_timestamp: "".to_string(),
+                    last_message_timestamp: None,
                     id: "".to_string(),
                     uuid: "".to_string(),
                 }
