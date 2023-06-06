@@ -12,8 +12,8 @@ use mongodb::{
     options::FindOneOptions,
 };
 use poise::serenity_prelude::{
-    self as serenity, CacheHttp, CreateAttachment, EditWebhookMessage, MessageId, Webhook,
-    WebhookId,
+    self as serenity, CacheHttp, ChannelType, CreateAttachment, EditWebhookMessage, MessageId,
+    Webhook, WebhookId,
 };
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
@@ -223,8 +223,39 @@ pub async fn message(
     let channels_collection = database.collection::<DBChannel>("channels");
     let messages_collection = database.collection::<DBMessage>("messages");
 
+    let channel_id;
+
+    if ctx
+        .http()
+        .get_channel(ctx.channel_id())
+        .await?
+        .guild()
+        .context("i hate you")?
+        .kind
+        == ChannelType::PublicThread
+        || ctx
+            .http()
+            .get_channel(ctx.channel_id())
+            .await?
+            .guild()
+            .context("i hate you")?
+            .kind
+            == ChannelType::PrivateThread
+    {
+        channel_id = ctx
+            .http()
+            .get_channel(ctx.channel_id())
+            .await?
+            .guild()
+            .context("i hate you")?
+            .parent_id
+            .unwrap();
+    } else {
+        channel_id = ctx.channel_id();
+    }
+
     let channel = channels_collection
-        .find_one(doc! {"id": ctx.channel_id().0.get() as i64}, None)
+        .find_one(doc! {"id": channel_id.0.get() as i64}, None)
         .await?
         .context("oopsie daisy")?;
 

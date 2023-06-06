@@ -309,8 +309,36 @@ pub async fn on_text_command(ctx: &SerenityContext, data: &Data, message: &Messa
                 message_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
             }
 
+            let channel_id;
+
+            if message
+                .channel(ctx.http())
+                .await?
+                .guild()
+                .context("i hate you")?
+                .kind
+                == ChannelType::PublicThread
+                || message
+                    .channel(ctx.http())
+                    .await?
+                    .guild()
+                    .context("i hate you")?
+                    .kind
+                    == ChannelType::PrivateThread
+            {
+                channel_id = message
+                    .channel(ctx.http())
+                    .await?
+                    .guild()
+                    .context("i hate you")?
+                    .parent_id
+                    .unwrap();
+            } else {
+                channel_id = message.channel_id;
+            }
+
             let channel = channels_collection
-                .find_one(doc! {"id": message.channel_id.0.get() as i64}, None)
+                .find_one(doc! {"id": channel_id.0.get() as i64}, None)
                 .await?
                 .context("oopsie daisy")?;
 
@@ -375,7 +403,7 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
     }
 
     let dbchannel = channels_collection
-        .find_one(doc! {"id": message.channel_id.0.get() as i64}, None)
+        .find_one(doc! {"id": guild_channel.id.0.get() as i64}, None)
         .await;
 
     let channel;
