@@ -3,7 +3,7 @@ use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
 use mongodb::bson::doc;
 use poise::serenity_prelude::{self as serenity, CacheHttp};
-use serde_json::json;
+
 use std::env;
 
 /// Register a new mate

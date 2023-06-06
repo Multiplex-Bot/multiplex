@@ -3,7 +3,7 @@ use crate::models::{DBChannel, DBMate, DBMessage};
 use super::CommandContext;
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, options::FindOneOptions};
-use poise::serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId};
+use poise::serenity_prelude::{CacheHttp, MessageId, Webhook, WebhookId};
 
 #[poise::command(slash_command, subcommands("mate", "message"))]
 pub async fn delete(_ctx: CommandContext<'_>) -> Result<()> {

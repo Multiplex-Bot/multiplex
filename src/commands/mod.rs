@@ -4,7 +4,7 @@ pub mod export;
 pub mod import;
 pub mod info;
 pub mod mate;
-pub mod proxy;
+pub mod settings;
 pub mod stats;
 
 use anyhow::Error;

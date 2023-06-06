@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
 use mongodb::bson::doc;
+use mongodb::options::FindOneOptions;
 use mongodb::Database;
 use poise::futures_util::TryStreamExt;
 
 use poise::serenity_prelude::{
-    webhook, AttachmentType, CacheHttp, Channel, ChannelType, Context as SerenityContext, Message,
-    MessageUpdateEvent, Reaction, ReactionType, Webhook, WebhookId,
+    AttachmentType, CacheHttp, Context as SerenityContext, Message, MessageId, MessageUpdateEvent,
+    Reaction, Webhook, WebhookId,
 };
 
 use crate::commands::Data;
@@ -229,6 +230,70 @@ pub async fn on_edit(
     Ok(())
 }
 
+pub async fn on_text_command(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
+    let database = &data.database;
+    let channels_collection = database.collection::<DBChannel>("channels");
+
+    match message
+        .content
+        .strip_prefix(&std::env::var("PREFIX").unwrap())
+        .unwrap()
+        .split_ascii_whitespace()
+        .next()
+        .unwrap()
+    {
+        "edit" => {
+            let message_id;
+            if let Some(message_ref) = message.referenced_message.clone() {
+                message_id = message_ref.id
+            } else {
+                let messages_collection = database.collection::<DBMessage>("messages");
+                let message = messages_collection
+                    .find_one(
+                        doc! { "user_id": message.author.id.0 as i64 },
+                        Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
+                    )
+                    .await?
+                    .context("Failed to get most recent message!")?;
+                message_id = MessageId(message.message_id)
+            }
+
+            let channel = channels_collection
+                .find_one(doc! {"id": message.channel_id.0 as i64}, None)
+                .await?
+                .context("oopsie daisy")?;
+
+            let webhook = Webhook::from_id_with_token(
+                ctx.http(),
+                WebhookId(channel.webhook_id as u64),
+                &channel.webhook_token,
+            )
+            .await?;
+
+            webhook
+                .edit_message(ctx.http(), message_id, |b| {
+                    b.content(
+                        message
+                            .content
+                            .strip_prefix(&format!(
+                                "{}{}",
+                                std::env::var("PREFIX").unwrap(),
+                                "edit"
+                            ))
+                            .unwrap(),
+                    )
+                })
+                .await?;
+
+            message.delete(ctx.http()).await?;
+        }
+        command => {
+            println!("Unknown command {}", command);
+        }
+    }
+    Ok(())
+}
+
 pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
     let database = &data.database;
 
@@ -329,7 +394,6 @@ pub async fn on_message(ctx: &SerenityContext, data: &Data, message: &Message) -
             if mate.autoproxy {
                 send_proxied_message(ctx, message, channel.clone(), mate, collective, database)
                     .await?;
-                did_proxy = true;
                 break;
             }
         }

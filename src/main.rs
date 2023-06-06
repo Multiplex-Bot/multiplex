@@ -6,7 +6,10 @@ mod tupperbox;
 
 use dotenvy::dotenv;
 use mongodb::{options::ClientOptions, Client};
-use poise::serenity_prelude::{self as serenity, CacheHttp, GuildId};
+use poise::{
+    serenity_prelude::{self as serenity, CacheHttp, GuildId},
+    PrefixFrameworkOptions,
+};
 use std::env;
 
 use commands::Data;
@@ -60,11 +63,17 @@ async fn main() {
                             tracing::info!("Bot is ready!")
                         }
                         poise::Event::Message { new_message } => {
-                            event_handler::on_message(ctx, data, new_message).await?
+                            if new_message.content.starts_with(&env::var("PREFIX").expect(
+                                "Could not find text command prefix; did you specify it in .env?",
+                            )) {
+                                event_handler::on_text_command(ctx, data, new_message).await?
+                            } else {
+                                event_handler::on_message(ctx, data, new_message).await?
+                            }
                         }
                         poise::Event::MessageUpdate {
-                            old_if_available,
-                            new,
+                            old_if_available: _,
+                            new: _,
                             event,
                         } => event_handler::on_edit(ctx, data, event).await?,
                         poise::Event::ReactionAdd { add_reaction } => {
