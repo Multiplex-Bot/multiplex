@@ -11,7 +11,11 @@ pub async fn mate(ctx: CommandContext<'_>, current_arg: &str) -> Vec<String> {
     let mates_collection = database.collection::<DBMate>("mates");
 
     let mut mates: Vec<String> = mates_collection
-        .distinct("name", doc! { "user_id": ctx.author().id.0 as i64 }, None)
+        .distinct(
+            "name",
+            doc! { "user_id": ctx.author().id.0.get() as i64 },
+            None,
+        )
         .await
         .expect("Failed to get all mates!")
         .iter()

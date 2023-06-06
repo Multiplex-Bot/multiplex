@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::futures_util::TryStreamExt;
 use poise::serenity_prelude::{self};
+use poise::CreateReply;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -38,7 +39,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     let mates_collection = database.collection::<DBMate>("mates");
 
     let default_collective = DBCollective {
-        user_id: ctx.author().id.0 as i64,
+        user_id: ctx.author().id.0.get() as i64,
         name: None,
         bio: None,
         pronouns: None,
@@ -47,14 +48,14 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     };
 
     let collective = collectives_collection
-        .find_one(doc! { "user_id": ctx.author().id.0 as i64 }, None)
+        .find_one(doc! { "user_id": ctx.author().id.0.get() as i64 }, None)
         .await
         // NOTE: I've seen it error on both of these whenever there's not a result for the query, so I'm not sure which it actually should be
         .unwrap_or(Some(default_collective.clone()))
         .unwrap_or(default_collective);
 
     let mates = mates_collection
-        .find(doc! {"user_id": ctx.author().id.0 as i64 }, None)
+        .find(doc! {"user_id": ctx.author().id.0.get() as i64 }, None)
         .await
         .context("Failed to get user's mates")?;
 
@@ -144,12 +145,12 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
         switches: vec![],
     };
 
-    ctx.send(|b| {
-        b.content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(serenity_prelude::AttachmentType::Bytes {
-            data: serde_json::to_vec(&export).unwrap().into(),
-            filename: "multiplex-export.json".to_string(),
-        })
-    })
+    ctx.send(CreateReply::new()
+        .content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(serenity_prelude::CreateAttachment::bytes(
+            serde_json::to_vec(&export).unwrap(),
+            "multiplex-export.json".to_string(),
+        ))
+    )
     .await?;
 
     Ok(())

@@ -4,7 +4,8 @@ use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::{
     futures_util::TryStreamExt,
-    serenity_prelude::{self as serenity},
+    serenity_prelude::{self as serenity, CreateEmbed, CreateMessage},
+    CreateReply,
 };
 
 /// Get the info of a user's collective or one of their mates
@@ -22,9 +23,9 @@ pub async fn info(
     let user_id;
     if user.is_none() {
         user = Some(ctx.author().clone());
-        user_id = ctx.author().id.0 as i64;
+        user_id = ctx.author().id.0.get() as i64;
     } else {
-        user_id = user.clone().unwrap().id.0 as i64;
+        user_id = user.clone().unwrap().id.0.get() as i64;
     }
 
     if let Some(mate) = mate {
@@ -33,32 +34,29 @@ pub async fn info(
             .await;
 
         if let Ok(Some(mate)) = mate {
-            if !mate.is_public && ctx.author().id.0 as i64 != user_id {
+            if !mate.is_public && ctx.author().id.0.get() as i64 != user_id {
                 return Err(anyhow::anyhow!("That mate doesn't exist!"));
             }
 
-            ctx.send(|b| {
-                b.embed(|mut final_embed| {
-                    final_embed = final_embed.title(mate.display_name.unwrap_or(mate.name));
-                    if let Some(bio) = mate.bio {
-                        final_embed = final_embed.field("Bio", bio, false);
-                    }
-                    if let Some(pronouns) = mate.pronouns {
-                        final_embed = final_embed.field("Pronouns", pronouns, false);
-                    }
-                    final_embed = final_embed.field(
-                        "Selector",
-                        format!(
-                            "{}text{}",
-                            mate.prefix.unwrap_or_default(),
-                            mate.postfix.unwrap_or_default()
-                        ),
-                        false,
-                    );
-                    final_embed
-                })
-            })
-            .await?;
+            let mut final_embed = CreateEmbed::new();
+            final_embed = final_embed.title(mate.display_name.unwrap_or(mate.name));
+            if let Some(bio) = mate.bio {
+                final_embed = final_embed.field("Bio", bio, false);
+            }
+            if let Some(pronouns) = mate.pronouns {
+                final_embed = final_embed.field("Pronouns", pronouns, false);
+            }
+            final_embed = final_embed.field(
+                "Selector",
+                format!(
+                    "{}text{}",
+                    mate.prefix.unwrap_or_default(),
+                    mate.postfix.unwrap_or_default()
+                ),
+                false,
+            );
+
+            ctx.send(CreateReply::new().embed(final_embed)).await?;
         } else {
             return Err(anyhow::anyhow!("That mate doesn't exist!"));
         }
@@ -81,7 +79,7 @@ pub async fn info(
             .unwrap_or(Some(default_collective.clone()))
             .unwrap_or(default_collective);
 
-        if !collective.is_public && ctx.author().id.0 as i64 != user_id {
+        if !collective.is_public && ctx.author().id.0.get() as i64 != user_id {
             return Err(anyhow::anyhow!("That is a private collective!"));
         }
 
@@ -92,41 +90,37 @@ pub async fn info(
 
         let mates = mates.try_collect::<Vec<DBMate>>().await?;
 
-        ctx.send(|b| {
-            b.embed(|mut e| {
-                e = e.title(
-                    collective
-                        .name
-                        .unwrap_or(format!("{}'s Collective", ctx.author().name)),
-                );
-                if let Some(bio) = collective.bio {
-                    e = e.field("Bio", bio, false);
-                }
-                if let Some(pronouns) = collective.pronouns {
-                    e = e.field("Pronouns", pronouns, false);
-                }
-                let mut mates_content = "".to_string();
-                for mate in mates.iter() {
-                    if let Some(display_name) = mate.display_name.clone() {
-                        mates_content = format!(
-                            "{}\n{} *({})*",
-                            mates_content,
-                            display_name.replace('*', "\\*"),
-                            mate.name.replace('*', "\\*")
-                        )
-                    } else {
-                        mates_content =
-                            format!("{}\n{}", mates_content, mate.name.replace('*', "\\*"))
-                    }
-                }
-                mates_content = mates_content.trim().to_string();
-                if !mates_content.is_empty() {
-                    e = e.field("Mates", mates_content, false);
-                }
-                e
-            })
-        })
-        .await?;
+        let mut final_embed = CreateEmbed::new();
+        final_embed = final_embed.title(
+            collective
+                .name
+                .unwrap_or(format!("{}'s Collective", ctx.author().name)),
+        );
+        if let Some(bio) = collective.bio {
+            final_embed = final_embed.field("Bio", bio, false);
+        }
+        if let Some(pronouns) = collective.pronouns {
+            final_embed = final_embed.field("Pronouns", pronouns, false);
+        }
+        let mut mates_content = "".to_string();
+        for mate in mates.iter() {
+            if let Some(display_name) = mate.display_name.clone() {
+                mates_content = format!(
+                    "{}\n{} *({})*",
+                    mates_content,
+                    display_name.replace('*', "\\*"),
+                    mate.name.replace('*', "\\*")
+                )
+            } else {
+                mates_content = format!("{}\n{}", mates_content, mate.name.replace('*', "\\*"))
+            }
+        }
+        mates_content = mates_content.trim().to_string();
+        if !mates_content.is_empty() {
+            final_embed = final_embed.field("Mates", mates_content, false);
+        }
+
+        ctx.send(CreateReply::new().embed(final_embed)).await?;
     }
 
     Ok(())

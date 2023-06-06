@@ -29,7 +29,7 @@ pub struct PluralkitExport {
 impl PluralkitExport {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
         Ok(DBCollective__new! {
-            user_id = user_id.0 as i64,
+            user_id = user_id.0.get() as i64,
             is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
             name = self.name.clone(),
             bio = self.description.clone(),
@@ -88,7 +88,7 @@ pub struct Member {
 impl Member {
     pub fn to_mate(&self, user_id: UserId) -> Result<DBMate> {
         Ok(DBMate__new! {
-                user_id = user_id.0 as i64,
+                user_id = user_id.0.get() as i64,
                 autoproxy = false,
                 name = self.name.clone(),
                 avatar = self

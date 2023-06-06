@@ -35,7 +35,7 @@ pub async fn tupperbox(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0 as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )
@@ -65,7 +65,7 @@ pub async fn multiplex(
 
     collectives_collection
         .find_one_and_update(
-            doc! { "user_id": ctx.author().id.0 as i64 },
+            doc! { "user_id": ctx.author().id.0.get() as i64 },
             doc! { "$set": bson::to_bson(&export.to_collective(ctx.author().id)?).unwrap() },
             UPSERT_OPTIONS.clone().unwrap(),
         )
@@ -76,7 +76,7 @@ pub async fn multiplex(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0 as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )
@@ -106,7 +106,7 @@ pub async fn pluralkit(
 
     collectives_collection
         .find_one_and_update(
-            doc! { "user_id": ctx.author().id.0 as i64 },
+            doc! { "user_id": ctx.author().id.0.get() as i64 },
             doc! { "$set": bson::to_bson(&export.to_collective(ctx.author().id)?).unwrap() },
             UPSERT_OPTIONS.clone().unwrap(),
         )
@@ -117,7 +117,7 @@ pub async fn pluralkit(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0 as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )

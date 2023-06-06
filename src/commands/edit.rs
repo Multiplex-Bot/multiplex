@@ -1,3 +1,5 @@
+use std::num::NonZeroU64;
+
 use super::autocomplete::mate as mate_autocomplete;
 use super::CommandContext;
 use crate::{
@@ -9,7 +11,10 @@ use mongodb::{
     bson::{self, doc},
     options::FindOneOptions,
 };
-use poise::serenity_prelude::{self as serenity, CacheHttp, MessageId, Webhook, WebhookId};
+use poise::serenity_prelude::{
+    self as serenity, CacheHttp, CreateAttachment, EditWebhookMessage, MessageId, Webhook,
+    WebhookId,
+};
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
 pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {
@@ -39,7 +44,7 @@ pub async fn mate(
 
     let old_mate = mates_collection
         .find_one(
-            doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
+            doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
             None,
         )
         .await;
@@ -63,7 +68,7 @@ pub async fn mate(
         }
 
         let mate = DBMate__new! {
-            user_id = ctx.author().id.0 as i64,
+            user_id = ctx.author().id.0.get() as i64,
             name = if let Some(new_name) = new_name {
                 new_name
             } else {
@@ -82,9 +87,9 @@ pub async fn mate(
             avatar = if let Some(avatar) = avatar {
                 let new_message = ctx
                     .http()
-                    .send_files(
-                        std::env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?,
-                        vec![(&*avatar.download().await?, avatar.filename.as_str())],
+                    .send_message(
+                        std::env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?.into(),
+                        vec![CreateAttachment::bytes(&*avatar.download().await?, avatar.filename.as_str())],
                         &serde_json::Map::new(),
                     )
                     .await?;
@@ -117,7 +122,7 @@ pub async fn mate(
 
         mates_collection
             .find_one_and_replace(
-                doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
                 mate,
                 None,
             )
@@ -148,7 +153,7 @@ pub async fn collective(
     let collectives_collection = database.collection::<DBCollective>("collectives");
 
     let old_collective = collectives_collection
-        .find_one(doc! { "user_id": ctx.author().id.0 as i64 }, None)
+        .find_one(doc! { "user_id": ctx.author().id.0.get() as i64 }, None)
         .await;
 
     let collective;
@@ -184,7 +189,7 @@ pub async fn collective(
         };
     } else {
         collective = DBCollective__new! {
-            user_id = ctx.author().id.0 as i64,
+            user_id = ctx.author().id.0.get() as i64,
             name,
             bio,
             pronouns,
@@ -195,7 +200,7 @@ pub async fn collective(
 
     collectives_collection
         .find_one_and_update(
-            doc! { "user_id": ctx.author().id.0 as i64 },
+            doc! { "user_id": ctx.author().id.0.get() as i64 },
             doc! { "$set": bson::to_bson(&collective).unwrap() },
             UPSERT_OPTIONS.clone().unwrap(),
         )
@@ -219,32 +224,32 @@ pub async fn message(
     let messages_collection = database.collection::<DBMessage>("messages");
 
     let channel = channels_collection
-        .find_one(doc! {"id": ctx.channel_id().0 as i64}, None)
+        .find_one(doc! {"id": ctx.channel_id().0.get() as i64}, None)
         .await?
         .context("oopsie daisy")?;
 
     let message_to_edit_id;
     if let Some(message_id) = message_id {
-        message_to_edit_id = MessageId(message_id.parse::<u64>()?)
+        message_to_edit_id = MessageId(NonZeroU64::new(message_id.parse::<u64>()?).unwrap())
     } else if let Some(message_link) = message_link {
         // https://discord.com/channels/891039687785996328/1008966348862390312/1109539731655626763 -> 1109539731655626763
         let iter = message_link.split("/");
         let message_id = iter.last().context("Failed to get message ID from link!")?;
-        message_to_edit_id = MessageId(message_id.parse::<u64>()?)
+        message_to_edit_id = MessageId(NonZeroU64::new(message_id.parse::<u64>()?).unwrap())
     } else {
         let message = messages_collection
             .find_one(
-                doc! { "user_id": ctx.author().id.0 as i64 },
+                doc! { "user_id": ctx.author().id.0.get() as i64 },
                 Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
             )
             .await?
             .context("Failed to get most recent message!")?;
-        message_to_edit_id = MessageId(message.message_id)
+        message_to_edit_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
     }
 
     messages_collection
         .find_one(
-            doc! { "message_id": i64::from(message_to_edit_id), "user_id": ctx.author().id.0 as i64 },
+            doc! { "message_id": i64::from(message_to_edit_id), "user_id": ctx.author().id.0.get() as i64 },
             None,
         )
         .await?
@@ -252,13 +257,17 @@ pub async fn message(
 
     let webhook = Webhook::from_id_with_token(
         ctx.http(),
-        WebhookId(channel.webhook_id as u64),
+        WebhookId(NonZeroU64::new(channel.webhook_id as u64).unwrap()),
         &channel.webhook_token,
     )
     .await?;
 
     webhook
-        .edit_message(ctx.http(), message_to_edit_id, |b| b.content(content))
+        .edit_message(
+            ctx.http(),
+            message_to_edit_id,
+            EditWebhookMessage::new().content(content),
+        )
         .await?;
 
     ctx.say("Edited message!").await?;

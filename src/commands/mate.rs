@@ -3,7 +3,7 @@ use super::CommandContext;
 use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
 use mongodb::bson::doc;
-use poise::serenity_prelude::{self as serenity, CacheHttp};
+use poise::serenity_prelude::{self as serenity, CacheHttp, CreateAttachment};
 
 use std::env;
 
@@ -30,7 +30,7 @@ pub async fn create(
 
     let old_mate = mates_collection
         .find_one(
-            doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
+            doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
             None,
         )
         .await;
@@ -59,9 +59,12 @@ pub async fn create(
         if let Some(avatar) = avatar {
             let new_message = ctx
                 .http()
-                .send_files(
-                    env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?,
-                    vec![(&*avatar.download().await?, avatar.filename.as_str())],
+                .send_message(
+                    env::var("AVATAR_CHANNEL").unwrap().parse::<u64>()?.into(),
+                    vec![CreateAttachment::bytes(
+                        &*avatar.download().await?,
+                        avatar.filename.as_str(),
+                    )],
                     &serde_json::Map::new(),
                 )
                 .await?;
@@ -71,7 +74,7 @@ pub async fn create(
         }
 
         let mate = DBMate__new! {
-            user_id = ctx.author().id.0 as i64,
+            user_id = ctx.author().id.0.get() as i64,
             name = name.clone(),
             is_public = publicity.unwrap_or(true),
             prefix,
@@ -106,7 +109,7 @@ pub async fn switch(
     if let Some(name) = name {
         let mate = mates_collection
             .find_one(
-                doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
                 None,
             )
             .await;
@@ -114,7 +117,7 @@ pub async fn switch(
         if let Ok(Some(_)) = mate {
             mates_collection
                 .update_one(
-                    doc! { "user_id": ctx.author().id.0 as i64, "autoproxy": true },
+                    doc! { "user_id": ctx.author().id.0.get() as i64, "autoproxy": true },
                     doc! { "$set": {"autoproxy": false} },
                     None,
                 )
@@ -122,7 +125,7 @@ pub async fn switch(
 
             mates_collection
                 .update_one(
-                    doc! { "user_id": ctx.author().id.0 as i64, "name": name.clone() },
+                    doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
                     doc! { "$set": {"autoproxy": true} },
                     None,
                 )
@@ -136,7 +139,7 @@ pub async fn switch(
     } else {
         mates_collection
             .update_one(
-                doc! { "user_id": ctx.author().id.0 as i64, "autoproxy": true },
+                doc! { "user_id": ctx.author().id.0.get() as i64, "autoproxy": true },
                 doc! { "$set": {"autoproxy": false} },
                 None,
             )
