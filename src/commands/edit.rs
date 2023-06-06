@@ -1,3 +1,4 @@
+use super::autocomplete::mate as mate_autocomplete;
 use super::CommandContext;
 use crate::{
     commands::UPSERT_OPTIONS,
@@ -19,7 +20,9 @@ pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {
 #[poise::command(slash_command)]
 pub async fn mate(
     ctx: CommandContext<'_>,
-    #[description = "the current name of the mate"] name: String,
+    #[description = "the current name of the mate"]
+    #[autocomplete = "mate_autocomplete"]
+    name: String,
     #[description = "the new name of the mate"] new_name: Option<String>,
     #[description = "the new trigger for proxying (ie `[text]`)"] selector: Option<String>,
     #[description = "the new name to show in chat when proxying"] display_name: Option<String>,

@@ -1,5 +1,6 @@
 use crate::models::{DBChannel, DBMate, DBMessage};
 
+use super::autocomplete::mate as mate_autocomplete;
 use super::CommandContext;
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, options::FindOneOptions};
@@ -14,7 +15,9 @@ pub async fn delete(_ctx: CommandContext<'_>) -> Result<()> {
 #[poise::command(slash_command)]
 pub async fn mate(
     ctx: CommandContext<'_>,
-    #[description = "name of the mate to delete"] name: String,
+    #[description = "name of the mate to delete"]
+    #[autocomplete = "mate_autocomplete"]
+    name: String,
 ) -> Result<()> {
     let database = &ctx.data().database;
 

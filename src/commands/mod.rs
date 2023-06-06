@@ -1,3 +1,4 @@
+pub mod autocomplete;
 pub mod delete;
 pub mod edit;
 pub mod export;

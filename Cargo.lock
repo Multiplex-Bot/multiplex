@@ -1000,6 +1000,7 @@ dependencies = [
  "poise",
  "serde",
  "serde_json",
+ "strsim",
  "tokio",
  "tracing",
  "tracing-subscriber",

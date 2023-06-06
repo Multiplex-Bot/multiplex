@@ -1,3 +1,4 @@
+use super::autocomplete::mate as mate_autocomplete;
 use super::CommandContext;
 use crate::models::{DBMate, DBMate__new};
 use anyhow::Result;
@@ -96,6 +97,7 @@ pub async fn create(
 pub async fn switch(
     ctx: CommandContext<'_>,
     #[description = "the name of the mate to switch to (removes current switch if not set)"]
+    #[autocomplete = "mate_autocomplete"]
     name: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
