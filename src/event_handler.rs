@@ -232,6 +232,7 @@ pub async fn on_edit(
 
 pub async fn on_text_command(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
     let database = &data.database;
+    let messages_collection = database.collection::<DBMessage>("messages");
     let channels_collection = database.collection::<DBChannel>("channels");
 
     match message
@@ -243,11 +244,21 @@ pub async fn on_text_command(ctx: &SerenityContext, data: &Data, message: &Messa
         .unwrap()
     {
         "edit" => {
+            message.delete(ctx.http()).await?;
+
             let message_id;
             if let Some(message_ref) = message.referenced_message.clone() {
-                message_id = message_ref.id
+                let message = messages_collection
+                    .find_one(
+                        doc! { "user_id": message.author.id.0 as i64, "message_id": message_ref.id.0 as i64 },
+                        Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
+                    ).await;
+                if let Ok(Some(_)) = message {
+                    message_id = message_ref.id
+                } else {
+                    return Err(anyhow::anyhow!("You don't own that message"));
+                }
             } else {
-                let messages_collection = database.collection::<DBMessage>("messages");
                 let message = messages_collection
                     .find_one(
                         doc! { "user_id": message.author.id.0 as i64 },
@@ -284,8 +295,6 @@ pub async fn on_text_command(ctx: &SerenityContext, data: &Data, message: &Messa
                     )
                 })
                 .await?;
-
-            message.delete(ctx.http()).await?;
         }
         command => {
             println!("Unknown command {}", command);
