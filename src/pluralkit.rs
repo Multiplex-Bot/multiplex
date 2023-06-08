@@ -53,7 +53,7 @@ pub struct SystemPrivacy {
 pub struct Config {
     pub timezone: String,
     pub pings_enabled: bool,
-    pub latch_timeout: Option<()>,
+    pub latch_timeout: Option<i64>,
     pub member_default_private: bool,
     pub group_default_private: bool,
     pub show_private_info: bool,
