@@ -96,8 +96,8 @@ impl Member {
                     .clone()
                     .unwrap_or(std::env::var("DEFAULT_AVATAR_URL").unwrap()),
                 bio = self.description.clone(),
-                prefix = self.proxy_tags[0].prefix.clone(),
-                postfix = self.proxy_tags[0].suffix.clone(),
+                prefix = self.proxy_tags.get(0).unwrap_or(&ProxyTag { prefix: None, suffix: None }).prefix.clone(),
+                postfix = self.proxy_tags.get(0).unwrap_or(&ProxyTag { prefix: None, suffix: None }).suffix.clone(),
                 pronouns = self.pronouns.clone(),
                 display_name = self.display_name.clone(),
                 is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
