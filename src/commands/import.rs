@@ -15,8 +15,10 @@ pub async fn import(_ctx: CommandContext<'_>) -> Result<()> {
     unreachable!()
 }
 
+// FIXME: upsertion of mates should be converted to a util at some point in the future
+
 /// Import a Tupperbox export into your collective (WARNING: WILL OVERWRITE CURRENT COLLECTIVE MEMBERS)
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn tupperbox(
     ctx: CommandContext<'_>,
     #[description = "your tupperbox export"] file: serenity_prelude::Attachment,
@@ -35,7 +37,7 @@ pub async fn tupperbox(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )
@@ -48,10 +50,10 @@ pub async fn tupperbox(
 }
 
 /// Import a Multiplex export into your collective (WARNING: WILL OVERWRITE ALL COLLECTIVE INFORMATION)
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn multiplex(
     ctx: CommandContext<'_>,
-    #[description = "your pluralkit export"] file: serenity_prelude::Attachment,
+    #[description = "your multiplex export"] file: serenity_prelude::Attachment,
 ) -> Result<()> {
     let download = file.download().await?;
     let content = String::from_utf8_lossy(&download);
@@ -65,7 +67,7 @@ pub async fn multiplex(
 
     collectives_collection
         .find_one_and_update(
-            doc! { "user_id": ctx.author().id.0.get() as i64 },
+            doc! { "user_id": ctx.author().id.get() as i64 },
             doc! { "$set": bson::to_bson(&export.to_collective(ctx.author().id)?).unwrap() },
             UPSERT_OPTIONS.clone().unwrap(),
         )
@@ -76,7 +78,7 @@ pub async fn multiplex(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )
@@ -89,7 +91,7 @@ pub async fn multiplex(
 }
 
 /// Import a Pluralkit export into your collective (WARNING: WILL OVERWRITE ALL COLLECTIVE INFORMATION)
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn pluralkit(
     ctx: CommandContext<'_>,
     #[description = "your pluralkit export"] file: serenity_prelude::Attachment,
@@ -106,7 +108,7 @@ pub async fn pluralkit(
 
     collectives_collection
         .find_one_and_update(
-            doc! { "user_id": ctx.author().id.0.get() as i64 },
+            doc! { "user_id": ctx.author().id.get() as i64 },
             doc! { "$set": bson::to_bson(&export.to_collective(ctx.author().id)?).unwrap() },
             UPSERT_OPTIONS.clone().unwrap(),
         )
@@ -117,7 +119,7 @@ pub async fn pluralkit(
 
         mates_collection
             .find_one_and_update(
-                doc! { "user_id": ctx.author().id.0.get() as i64, "name": mate.name.clone() },
+                doc! { "user_id": ctx.author().id.get() as i64, "name": mate.name.clone() },
                 doc! { "$set": bson::to_bson(&mate).unwrap() },
                 UPSERT_OPTIONS.clone().unwrap(),
             )

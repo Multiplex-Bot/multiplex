@@ -1,19 +1,23 @@
+use std::num::NonZeroU64;
+
 use super::CommandContext;
 use crate::models::{DBCollective, DBMate};
-use anyhow::{Context, Result};
+use crate::utils;
+use anyhow::{bail, Context, Result};
 use mongodb::bson::doc;
+use poise::serenity_prelude::UserId;
 use poise::{
-    futures_util::TryStreamExt,
-    serenity_prelude::{self as serenity, CreateEmbed, CreateMessage},
+    serenity_prelude::{self as serenity, CreateEmbed},
     CreateReply,
 };
 
+// FIXME: make this less bad
 /// Get the info of a user's collective or one of their mates
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn info(
     ctx: CommandContext<'_>,
     #[description = "the name of the user you want to get information from (defaults to you if unspecified)"]
-    mut user: Option<serenity::User>,
+    user: Option<serenity::User>,
     #[description = "the name of the mate you want to get information about (if unspecified, gets collective information)"]
     mate: Option<String>,
 ) -> Result<()> {
@@ -22,30 +26,31 @@ pub async fn info(
 
     let user_id;
     if user.is_none() {
-        user = Some(ctx.author().clone());
-        user_id = ctx.author().id.0.get() as i64;
+        user_id = ctx.author().id.get() as i64;
     } else {
-        user_id = user.clone().unwrap().id.0.get() as i64;
+        user_id = user.clone().unwrap().id.get() as i64;
     }
+    let user_id = UserId(NonZeroU64::new(user_id as u64).unwrap());
 
     if let Some(mate) = mate {
-        let mate = mates_collection
-            .find_one(doc! { "user_id": user_id, "name": mate.clone() }, None)
-            .await;
+        let mate = utils::get_mate(&mates_collection, user_id, mate.clone())
+            .await
+            .context("")?;
 
-        if let Ok(Some(mate)) = mate {
-            if !mate.is_public && ctx.author().id.0.get() as i64 != user_id {
-                return Err(anyhow::anyhow!("That mate doesn't exist!"));
-            }
+        if !mate.is_public && ctx.author().id != user_id {
+            bail!("That mate doesn't exist!");
+        }
 
-            let mut final_embed = CreateEmbed::new();
-            final_embed = final_embed.title(mate.display_name.unwrap_or(mate.name));
-            if let Some(bio) = mate.bio {
-                final_embed = final_embed.field("Bio", bio, false);
-            }
-            if let Some(pronouns) = mate.pronouns {
-                final_embed = final_embed.field("Pronouns", pronouns, false);
-            }
+        let mut final_embed = CreateEmbed::new()
+            .title(mate.display_name.unwrap_or(mate.name))
+            .thumbnail(mate.avatar);
+        if let Some(bio) = mate.bio {
+            final_embed = final_embed.field("Bio", bio, false);
+        }
+        if let Some(pronouns) = mate.pronouns {
+            final_embed = final_embed.field("Pronouns", pronouns, false);
+        }
+        if mate.prefix.is_some() || mate.postfix.is_some() {
             final_embed = final_embed.field(
                 "Selector",
                 format!(
@@ -55,53 +60,30 @@ pub async fn info(
                 ),
                 false,
             );
-
-            ctx.send(CreateReply::new().embed(final_embed)).await?;
-        } else {
-            return Err(anyhow::anyhow!("That mate doesn't exist!"));
         }
-    } else {
-        let default_collective = DBCollective {
-            user_id,
-            name: Some(format!("{}'s Collective", user.unwrap().name)),
-            bio: None,
-            pronouns: None,
-            collective_tag: None,
-            is_public: true,
-        };
 
+        ctx.send(CreateReply::new().embed(final_embed)).await?;
+    } else {
         let collectives_collection = database.collection::<DBCollective>("collectives");
 
-        let collective = collectives_collection
-            .find_one(doc! { "user_id": user_id }, None)
-            .await
-            // NOTE: I've seen it error on both of these whenever there's not a result for the query, so I'm not sure which it actually should be
-            .unwrap_or(Some(default_collective.clone()))
-            .unwrap_or(default_collective);
+        let collective = utils::get_or_create_collective(&collectives_collection, user_id).await?;
 
-        if !collective.is_public && ctx.author().id.0.get() as i64 != user_id {
-            return Err(anyhow::anyhow!("That is a private collective!"));
-        }
+        let mates = utils::get_all_mates(&mates_collection, user_id).await?;
 
-        let mates = mates_collection
-            .find(doc! {"user_id": user_id }, None)
-            .await
-            .context("Failed to get user's mates")?;
-
-        let mates = mates.try_collect::<Vec<DBMate>>().await?;
-
-        let mut final_embed = CreateEmbed::new();
-        final_embed = final_embed.title(
+        let mut final_embed = CreateEmbed::new().title(
             collective
                 .name
                 .unwrap_or(format!("{}'s Collective", ctx.author().name)),
         );
+
         if let Some(bio) = collective.bio {
             final_embed = final_embed.field("Bio", bio, false);
         }
+
         if let Some(pronouns) = collective.pronouns {
             final_embed = final_embed.field("Pronouns", pronouns, false);
         }
+
         let mut mates_content = "".to_string();
         for mate in mates.iter() {
             if let Some(display_name) = mate.display_name.clone() {
@@ -115,7 +97,9 @@ pub async fn info(
                 mates_content = format!("{}\n{}", mates_content, mate.name.replace('*', "\\*"))
             }
         }
+
         mates_content = mates_content.trim().to_string();
+
         if !mates_content.is_empty() {
             final_embed = final_embed.field("Mates", mates_content, false);
         }

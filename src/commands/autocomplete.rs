@@ -2,7 +2,6 @@ use crate::models::DBMate;
 
 use super::CommandContext;
 
-use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use strsim::normalized_damerau_levenshtein;
 

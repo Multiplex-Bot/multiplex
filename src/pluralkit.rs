@@ -30,7 +30,7 @@ impl PluralkitExport {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
         Ok(DBCollective__new! {
             user_id = user_id.0.get() as i64,
-            is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
+            is_public = !self.privacy.is_private()?,
             name = self.name.clone(),
             bio = self.description.clone(),
             pronouns = self.pronouns.clone(),
@@ -47,6 +47,12 @@ pub struct SystemPrivacy {
     pub group_list_privacy: String,
     pub front_privacy: String,
     pub front_history_privacy: String,
+}
+
+impl SystemPrivacy {
+    pub fn is_private(&self) -> Result<bool> {
+        Ok(serde_json::to_string(&self)?.contains("\"private\""))
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -87,6 +93,11 @@ pub struct Member {
 
 impl Member {
     pub fn to_mate(&self, user_id: UserId) -> Result<DBMate> {
+        let proxy_tags = self.proxy_tags.get(0).unwrap_or(&ProxyTag {
+            prefix: None,
+            suffix: None,
+        });
+
         Ok(DBMate__new! {
                 user_id = user_id.0.get() as i64,
                 autoproxy = false,
@@ -96,11 +107,11 @@ impl Member {
                     .clone()
                     .unwrap_or(std::env::var("DEFAULT_AVATAR_URL").unwrap()),
                 bio = self.description.clone(),
-                prefix = self.proxy_tags.get(0).unwrap_or(&ProxyTag { prefix: None, suffix: None }).prefix.clone(),
-                postfix = self.proxy_tags.get(0).unwrap_or(&ProxyTag { prefix: None, suffix: None }).suffix.clone(),
+                prefix = proxy_tags.prefix.clone(),
+                postfix = proxy_tags.suffix.clone(),
                 pronouns = self.pronouns.clone(),
                 display_name = self.display_name.clone(),
-                is_public = !serde_json::to_string(&self.privacy)?.contains("\"private\""),
+                is_public = !self.privacy.is_private()?,
         })
     }
 }
@@ -120,6 +131,12 @@ pub struct MemberPrivacy {
     pub pronoun_privacy: String,
     pub avatar_privacy: String,
     pub metadata_privacy: String,
+}
+
+impl MemberPrivacy {
+    pub fn is_private(&self) -> Result<bool> {
+        Ok(serde_json::to_string(&self)?.contains("\"private\""))
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

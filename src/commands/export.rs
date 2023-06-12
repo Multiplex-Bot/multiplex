@@ -1,65 +1,24 @@
 use super::CommandContext;
 use crate::models::{DBCollective, DBMate};
 use crate::pluralkit::{Config, Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy};
-use anyhow::{Context, Result};
+use crate::utils;
+use anyhow::Result;
 use mongodb::bson::doc;
-use poise::futures_util::TryStreamExt;
-use poise::serenity_prelude::{self};
+use poise::serenity_prelude::CreateAttachment;
 use poise::CreateReply;
-use serde::{Deserialize, Serialize};
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Export {
-    // Should always be `2`
-    pub version: i64,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub pronouns: Option<String>,
-    pub privacy: SystemPrivacy,
-    pub members: Vec<MateExport>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MateExport {
-    pub name: String,
-    pub display_name: Option<String>,
-    pub pronouns: Option<String>,
-    pub avatar_url: Option<String>,
-    pub description: Option<String>,
-    pub proxy_tags: Vec<ProxyTag>,
-    pub privacy: MemberPrivacy,
-}
 
 /// Export your collective to a format (theoretically) compatible with both Tupperbox and Pluralkit
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     let database = &ctx.data().database;
 
     let collectives_collection = database.collection::<DBCollective>("collectives");
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let default_collective = DBCollective {
-        user_id: ctx.author().id.0.get() as i64,
-        name: None,
-        bio: None,
-        pronouns: None,
-        collective_tag: None,
-        is_public: true,
-    };
+    let collective =
+        utils::get_or_create_collective(&collectives_collection, ctx.author().id).await?;
 
-    let collective = collectives_collection
-        .find_one(doc! { "user_id": ctx.author().id.0.get() as i64 }, None)
-        .await
-        // NOTE: I've seen it error on both of these whenever there's not a result for the query, so I'm not sure which it actually should be
-        .unwrap_or(Some(default_collective.clone()))
-        .unwrap_or(default_collective);
-
-    let mates = mates_collection
-        .find(doc! {"user_id": ctx.author().id.0.get() as i64 }, None)
-        .await
-        .context("Failed to get user's mates")?;
-
-    let mates = mates.try_collect::<Vec<DBMate>>().await?;
+    let mates = utils::get_all_mates(&mates_collection, ctx.author().id).await?;
 
     let collective_privacy_str = if collective.is_public {
         "public"
@@ -68,6 +27,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     }
     .to_string();
 
+    // FIXME: this is the worst function anybody has ever laid eyes on
     let export = PluralkitExport {
         version: 2,
         name: collective.name,
@@ -120,7 +80,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
             })
             .collect::<Vec<Member>>(),
         tag: collective.collective_tag,
-        // useless pluralkit garbage
+        // useless pluralkit garbage: part 2
         avatar_url: None,
         id: "".to_string(),
         uuid: "".to_string(),
@@ -146,7 +106,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     };
 
     ctx.send(CreateReply::new()
-        .content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(serenity_prelude::CreateAttachment::bytes(
+        .content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(CreateAttachment::bytes(
             serde_json::to_vec(&export).unwrap(),
             "multiplex-export.json".to_string(),
         ))

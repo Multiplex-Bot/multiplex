@@ -5,8 +5,8 @@ pub mod export;
 pub mod import;
 pub mod info;
 pub mod mate;
+pub mod misc;
 pub mod settings;
-pub mod stats;
 
 use anyhow::Error;
 use mongodb::{options::FindOneAndUpdateOptions, Database};

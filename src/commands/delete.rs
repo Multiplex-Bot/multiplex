@@ -1,12 +1,13 @@
 use std::num::NonZeroU64;
 
 use crate::models::{DBChannel, DBMate, DBMessage};
+use crate::utils;
 
 use super::autocomplete::mate as mate_autocomplete;
 use super::CommandContext;
 use anyhow::{Context, Result};
-use mongodb::{bson::doc, options::FindOneOptions};
-use poise::serenity_prelude::{CacheHttp, MessageId, Webhook, WebhookId};
+use mongodb::bson::doc;
+use poise::serenity_prelude::{CacheHttp, MessageId};
 
 #[poise::command(slash_command, subcommands("mate", "message"))]
 pub async fn delete(_ctx: CommandContext<'_>) -> Result<()> {
@@ -14,7 +15,7 @@ pub async fn delete(_ctx: CommandContext<'_>) -> Result<()> {
 }
 
 /// Delete a mate
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn mate(
     ctx: CommandContext<'_>,
     #[description = "name of the mate to delete"]
@@ -25,80 +26,52 @@ pub async fn mate(
 
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let old_mate = mates_collection
-        .find_one(
-            doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
-            None,
-        )
-        .await;
+    utils::get_mate(&mates_collection, ctx.author().id, name.clone())
+        .await
+        .context("Failed to find mate; do they actually exist?")?;
 
-    if let Ok(Some(_)) = old_mate {
-        mates_collection
-            .delete_one(
-                doc! { "user_id": ctx.author().id.0.get() as i64, "name": name.clone() },
-                None,
-            )
-            .await?;
-    } else {
-        return Err(anyhow::anyhow!("Can't delete a mate that doesn't exist!"));
-    }
+    utils::delete_mate(&mates_collection, ctx.author().id, name.clone()).await?;
+
     ctx.say("Successfully deleted mate! o7 :headstone:").await?;
     Ok(())
 }
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn message(
     ctx: CommandContext<'_>,
-    #[description = "The raw ID of the message to edit"] message_id: Option<String>,
-    #[description = "A link to the message to edit"] message_link: Option<String>,
+    #[description = "the raw ID of the message to delete"] message_id: Option<u64>,
+    #[description = "a link to the message to delete"] message_link: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
     let channels_collection = database.collection::<DBChannel>("channels");
     let messages_collection = database.collection::<DBMessage>("messages");
 
-    let channel = channels_collection
-        .find_one(doc! {"id": ctx.channel_id().0.get() as i64}, None)
-        .await?
-        .context("oopsie daisy")?;
-
     let message_to_delete_id;
     if let Some(message_id) = message_id {
-        message_to_delete_id = MessageId(NonZeroU64::new(message_id.parse::<u64>()?).unwrap())
+        message_to_delete_id = MessageId(NonZeroU64::new(message_id).unwrap())
     } else if let Some(message_link) = message_link {
-        // https://discord.com/channels/891039687785996328/1008966348862390312/1109539731655626763 -> 1109539731655626763
-        let iter = message_link.split("/");
-        let message_id = iter.last().context("Failed to get message ID from link!")?;
-        message_to_delete_id = MessageId(NonZeroU64::new(message_id.parse::<u64>()?).unwrap())
+        message_to_delete_id = utils::message_link_to_id(message_link)?
     } else {
-        let message = messages_collection
-            .find_one(
-                doc! { "user_id": ctx.author().id.0.get() as i64 },
-                Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
-            )
-            .await?
-            .context("Failed to get most recent message!")?;
+        let message = utils::get_most_recent_message(&messages_collection, ctx.author().id).await?;
         message_to_delete_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
     }
 
-    messages_collection
-        .find_one(
-            doc! { "message_id": i64::from(message_to_delete_id), "user_id": ctx.author().id.0.get() as i64 },
-            None,
-        )
-        .await?
-        .context("Sorry, the proxied message is not available; leave a message at the tone.")?;
+    let (webhook, thread_id) =
+        utils::get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
 
-    let webhook = Webhook::from_id_with_token(
-        ctx.http(),
-        WebhookId(NonZeroU64::new(channel.webhook_id as u64).unwrap()),
-        &channel.webhook_token,
-    )
-    .await?;
+    let dbmessage =
+        utils::get_message(&messages_collection, ctx.author().id, message_to_delete_id).await;
 
-    webhook
-        .delete_message(ctx.http(), message_to_delete_id)
-        .await?;
+    if let Ok(_) = dbmessage {
+        webhook
+            .delete_message(ctx.http(), thread_id, message_to_delete_id)
+            .await?;
 
-    ctx.say("Deleted message! o7 :headstone:").await?;
-    Ok(())
+        ctx.say("Deleted message! o7 :headstone:").await?;
+        Ok(())
+    } else {
+        // weird looking but just propagates the error generated by get_message to the user
+        dbmessage?;
+        Ok(())
+    }
 }
