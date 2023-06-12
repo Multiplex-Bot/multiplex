@@ -100,7 +100,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
     let mut did_proxy = false;
 
     for mate in mates.clone() {
-        if message
+        /* if message
             .content
             .starts_with(&mate.prefix.clone().unwrap_or_default())
             && message
@@ -111,6 +111,21 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
 
             did_proxy = true;
             break;
+        } */
+        if mate.prefix.is_some() || mate.postfix.is_some() {
+            if message
+                .content
+                .starts_with(&mate.prefix.clone().unwrap_or_default())
+                && message
+                    .content
+                    .ends_with(&mate.postfix.clone().unwrap_or_default())
+            {
+                send_proxied_message(ctx.http(), message, mate, collective.clone(), database)
+                    .await?;
+
+                did_proxy = true;
+                break;
+            }
         }
     }
 
