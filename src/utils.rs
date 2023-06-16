@@ -74,7 +74,6 @@ pub async fn get_or_create_collective(
     }
 }
 
-// FIXME: returning of a tuple for this is... a bit weird here
 pub async fn get_webhook_or_create(
     http: &Http,
     collection: &Collection<DBChannel>,
@@ -154,7 +153,7 @@ pub async fn get_most_recent_message(
 
 pub async fn get_message(
     collection: &Collection<DBMessage>,
-    user_id: UserId,
+    user_id: Option<UserId>,
     message_id: MessageId,
 ) -> Result<DBMessage> {
     let dbmessage = collection
@@ -162,11 +161,12 @@ pub async fn get_message(
         .await?
         .context("Could not find message; was it proxied by Multiplex?")?;
 
-    if dbmessage.user_id != user_id.get() {
-        bail!("This message was not sent by you or your mates!")
-    } else {
-        Ok(dbmessage)
+    if let Some(user_id) = user_id {
+        if dbmessage.user_id != user_id.get() {
+            bail!("This message was not sent by you or your mates!")
+        }
     }
+    Ok(dbmessage)
 }
 
 pub fn parse_selector(selector: Option<String>) -> (Option<String>, Option<String>) {
@@ -215,6 +215,32 @@ pub async fn upload_avatar(http: &Http, attachment: Attachment) -> Result<String
 
 pub fn is_thread(channel: &GuildChannel) -> bool {
     channel.kind == ChannelType::PublicThread || channel.kind == ChannelType::PrivateThread
+}
+
+pub fn get_matching_mate<'a>(
+    mates: &'a Vec<DBMate>,
+    message_content: &String,
+) -> Option<&'a DBMate> {
+    for mate in mates {
+        // account for proxy-tag-less mates
+        if mate.prefix.is_some() || mate.postfix.is_some() {
+            if message_content.starts_with(&mate.prefix.clone().unwrap_or_default())
+                && message_content.ends_with(&mate.postfix.clone().unwrap_or_default())
+            {
+                return Some(mate);
+            }
+        }
+    }
+    None
+}
+
+pub fn get_autoproxied_mate<'a>(mates: &'a Vec<DBMate>) -> Option<&'a DBMate> {
+    for mate in mates {
+        if mate.autoproxy {
+            return Some(mate);
+        }
+    }
+    None
 }
 
 pub async fn send_proxied_message(

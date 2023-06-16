@@ -119,7 +119,12 @@ pub async fn message(
     let (webhook, thread_id) =
         utils::get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
 
-    _ = utils::get_message(&messages_collection, ctx.author().id, message_to_edit_id).await?;
+    _ = utils::get_message(
+        &messages_collection,
+        Some(ctx.author().id),
+        message_to_edit_id,
+    )
+    .await?;
 
     let mut builder = EditWebhookMessage::new().content(content);
 
