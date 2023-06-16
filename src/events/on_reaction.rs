@@ -1,10 +1,11 @@
 use anyhow::Result;
-
 use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, CreateMessage, Reaction};
 
-use crate::commands::Data;
-use crate::models::{DBChannel, DBMessage};
-use crate::utils::{self, get_webhook_or_create};
+use crate::{
+    commands::Data,
+    models::{DBChannel, DBMessage},
+    utils::{self, get_webhook_or_create},
+};
 
 pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Result<()> {
     let database = &data.database;

@@ -1,10 +1,12 @@
-use super::autocomplete::mate as mate_autocomplete;
-use super::CommandContext;
-use crate::models::{DBMate, DBMate__new};
-use crate::utils;
 use anyhow::{bail, Result};
 use mongodb::bson::doc;
 use poise::serenity_prelude::{self as serenity, CacheHttp};
+
+use super::{autocomplete::mate as mate_autocomplete, CommandContext};
+use crate::{
+    models::{DBMate, DBMate__new},
+    utils,
+};
 
 /// Register a new mate
 #[poise::command(slash_command, ephemeral)]

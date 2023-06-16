@@ -1,9 +1,8 @@
-use crate::models::DBMate;
-
-use super::CommandContext;
-
 use mongodb::bson::doc;
 use strsim::normalized_damerau_levenshtein;
+
+use super::CommandContext;
+use crate::models::DBMate;
 
 pub async fn mate(ctx: CommandContext<'_>, current_arg: &str) -> Vec<String> {
     let database = &ctx.data().database;

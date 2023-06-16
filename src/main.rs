@@ -5,15 +5,15 @@ mod pluralkit;
 mod tupperbox;
 mod utils;
 
+use std::{env, num::NonZeroU64};
+
+use commands::Data;
 use dotenvy::dotenv;
 use mongodb::{options::ClientOptions, Client as MongoClient};
 use poise::{
     serenity_prelude::{CacheHttp, Client, Command, FullEvent, GatewayIntents, GuildId},
     Framework,
 };
-use std::{env, num::NonZeroU64};
-
-use commands::Data;
 
 #[tokio::main]
 async fn main() {

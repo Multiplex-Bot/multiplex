@@ -1,3 +1,7 @@
+use anyhow::Result;
+use mongodb::bson::{self, doc};
+use poise::serenity_prelude::{self};
+
 use super::CommandContext;
 use crate::{
     commands::UPSERT_OPTIONS,
@@ -5,9 +9,6 @@ use crate::{
     pluralkit::PluralkitExport,
     tupperbox::TupperboxExport,
 };
-use anyhow::Result;
-use mongodb::bson::{self, doc};
-use poise::serenity_prelude::{self};
 
 #[poise::command(slash_command, subcommands("tupperbox", "pluralkit"))]
 pub async fn import(_ctx: CommandContext<'_>) -> Result<()> {

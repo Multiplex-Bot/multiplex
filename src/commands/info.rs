@@ -1,14 +1,16 @@
 use std::num::NonZeroU64;
 
-use super::CommandContext;
-use crate::models::{DBCollective, DBMate};
-use crate::utils;
 use anyhow::{bail, Context, Result};
 use mongodb::bson::doc;
-use poise::serenity_prelude::UserId;
 use poise::{
-    serenity_prelude::{self as serenity, CreateEmbed},
+    serenity_prelude::{self as serenity, CreateEmbed, UserId},
     CreateReply,
+};
+
+use super::CommandContext;
+use crate::{
+    models::{DBCollective, DBMate},
+    utils,
 };
 
 // FIXME: make this less bad

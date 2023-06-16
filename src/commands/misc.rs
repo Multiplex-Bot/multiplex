@@ -1,6 +1,3 @@
-use crate::models::DBMate;
-
-use super::CommandContext;
 use anyhow::{Context, Result};
 use chrono::Utc;
 use mongodb::bson::doc;
@@ -8,6 +5,9 @@ use poise::{
     serenity_prelude::{CacheHttp, CreateEmbed},
     CreateReply,
 };
+
+use super::CommandContext;
+use crate::models::DBMate;
 
 /// Get the statistics of the bot
 #[poise::command(slash_command, ephemeral)]

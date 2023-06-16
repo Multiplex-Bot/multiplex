@@ -1,16 +1,16 @@
 use std::num::NonZeroU64;
 
 use anyhow::{Context, Result};
-use mongodb::bson::doc;
-use mongodb::options::FindOneOptions;
-
+use mongodb::{bson::doc, options::FindOneOptions};
 use poise::serenity_prelude::{
     CacheHttp, ChannelType, Context as SerenityContext, EditWebhookMessage, Message, MessageId,
     Webhook, WebhookId,
 };
 
-use crate::commands::Data;
-use crate::models::{DBChannel, DBMessage};
+use crate::{
+    commands::Data,
+    models::{DBChannel, DBMessage},
+};
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
     let database = &data.database;

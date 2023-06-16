@@ -1,14 +1,14 @@
 use std::num::NonZeroU64;
 
-use super::autocomplete::mate as mate_autocomplete;
-use super::CommandContext;
+use anyhow::{Context, Result};
+use mongodb::bson::doc;
+use poise::serenity_prelude::{self as serenity, CacheHttp, EditWebhookMessage, MessageId};
+
+use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
     models::{DBChannel, DBCollective, DBMate, DBMessage},
     utils,
 };
-use anyhow::{Context, Result};
-use mongodb::bson::doc;
-use poise::serenity_prelude::{self as serenity, CacheHttp, EditWebhookMessage, MessageId};
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
 pub async fn edit(_ctx: CommandContext<'_>) -> Result<()> {

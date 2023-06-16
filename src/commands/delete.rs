@@ -1,13 +1,14 @@
 use std::num::NonZeroU64;
 
-use crate::models::{DBChannel, DBMate, DBMessage};
-use crate::utils;
-
-use super::autocomplete::mate as mate_autocomplete;
-use super::CommandContext;
 use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::serenity_prelude::{CacheHttp, MessageId};
+
+use super::{autocomplete::mate as mate_autocomplete, CommandContext};
+use crate::{
+    models::{DBChannel, DBMate, DBMessage},
+    utils,
+};
 
 #[poise::command(slash_command, subcommands("mate", "message"))]
 pub async fn delete(_ctx: CommandContext<'_>) -> Result<()> {

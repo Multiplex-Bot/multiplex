@@ -1,11 +1,13 @@
-use super::CommandContext;
-use crate::models::{DBCollective, DBMate};
-use crate::pluralkit::{Config, Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy};
-use crate::utils;
 use anyhow::Result;
 use mongodb::bson::doc;
-use poise::serenity_prelude::CreateAttachment;
-use poise::CreateReply;
+use poise::{serenity_prelude::CreateAttachment, CreateReply};
+
+use super::CommandContext;
+use crate::{
+    models::{DBCollective, DBMate},
+    pluralkit::{Config, Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy},
+    utils,
+};
 
 /// Export your collective to a format (theoretically) compatible with both Tupperbox and Pluralkit
 #[poise::command(slash_command, ephemeral)]

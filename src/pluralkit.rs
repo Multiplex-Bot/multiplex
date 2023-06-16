@@ -1,8 +1,9 @@
-use crate::models::{DBCollective, DBCollective__new, DBMate, DBMate__new};
 use anyhow::Result;
 use poise::serenity_prelude::UserId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use crate::models::{DBCollective, DBCollective__new, DBMate, DBMate__new};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PluralkitExport {

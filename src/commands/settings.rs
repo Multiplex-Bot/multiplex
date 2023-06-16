@@ -1,6 +1,7 @@
-use super::CommandContext;
 use anyhow::Result;
 use mongodb::bson::doc;
+
+use super::CommandContext;
 
 #[poise::command(slash_command, subcommands("sticky"))]
 pub async fn settings(_ctx: CommandContext<'_>) -> Result<()> {

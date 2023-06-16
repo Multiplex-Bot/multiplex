@@ -1,10 +1,11 @@
 use anyhow::Result;
 use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, MessageUpdateEvent};
 
-use crate::commands::Data;
-use crate::models::{DBCollective, DBMate};
-
-use crate::utils;
+use crate::{
+    commands::Data,
+    models::{DBCollective, DBMate},
+    utils,
+};
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEvent) -> Result<()> {
     let database = &data.database;

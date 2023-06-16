@@ -1,9 +1,11 @@
 use anyhow::Result;
 use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message};
 
-use crate::commands::Data;
-use crate::models::{DBCollective, DBMate};
-use crate::utils;
+use crate::{
+    commands::Data,
+    models::{DBCollective, DBMate},
+    utils,
+};
 
 // FIXME: impl latch switching
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {

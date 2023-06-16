@@ -1,7 +1,6 @@
+use anyhow::{Context, Result};
 use mongodb::{bson::doc, Collection};
 use orderless::impl_orderless;
-
-use anyhow::{Context, Result};
 use poise::serenity_prelude::Http;
 use serde::{Deserialize, Serialize};
 
