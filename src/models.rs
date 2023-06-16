@@ -197,4 +197,5 @@ pub struct DBChannel {
 pub struct DBMessage {
     pub user_id: u64,
     pub message_id: u64,
+    pub mate_name: Option<String>,
 }

@@ -1,11 +1,13 @@
-use anyhow::Result;
+use std::num::NonZeroU64;
+
+use anyhow::{Context, Result};
 use poise::serenity_prelude::{
-    CacheHttp, Context as SerenityContext, CreateEmbed, CreateMessage, Reaction,
+    CacheHttp, Context as SerenityContext, CreateEmbed, CreateMessage, Reaction, UserId,
 };
 
 use crate::{
     commands::Data,
-    models::{DBChannel, DBMessage},
+    models::{DBChannel, DBMate, DBMessage},
     utils::{self, get_webhook_or_create},
 };
 
@@ -27,7 +29,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                 .await?;
         }
     } else if reaction.emoji.unicode_eq("❓") {
-        let real_message = ctx
+        let webhook_message = ctx
             .http()
             .get_message(reaction.channel_id, reaction.message_id)
             .await?;
@@ -42,19 +44,41 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                     .embeds(vec![CreateEmbed::new()
                         .title("Message Info")
                         .field("User", format!("<@{}>", original_message.user_id), false)
-                        .field("Mate", "Not currently implemented!", false) // FIXME: implement
+                        .field(
+                            "Mate",
+                            if let Some(mate_name) = original_message.mate_name {
+                                let mates_collection = database.collection::<DBMate>("mates");
+
+                                let mate = utils::get_mate(
+                                    &mates_collection,
+                                    UserId(NonZeroU64::new(original_message.user_id).unwrap()),
+                                    mate_name,
+                                )
+                                .await
+                                .context("Failed to get mate!")?;
+
+                                if let Some(display_name) = mate.display_name {
+                                    format!("{} ({})", display_name, mate.name)
+                                } else {
+                                    format!("{}", mate.name)
+                                }
+                            } else {
+                                "Unknown".to_string()
+                            },
+                            false,
+                        )
                         .field(
                             "Message",
                             format!(
                                 "{} ([jump to message]({}))",
-                                utils::clamp_message_length(&real_message.content),
-                                real_message.link()
+                                utils::clamp_message_length(&webhook_message.content),
+                                webhook_message.link()
                             ),
                             false,
                         )
                         .field(
                             "Timestamp",
-                            format!("<t:{}>", real_message.timestamp.timestamp()),
+                            format!("<t:{}>", webhook_message.timestamp.timestamp()),
                             false,
                         )]),
             )

@@ -288,7 +288,7 @@ pub async fn send_proxied_message(
             if let Some(display_name) = mate.display_name {
                 display_name
             } else {
-                mate.name
+                mate.name.clone()
             },
             collective.collective_tag.unwrap_or_default()
         ));
@@ -346,6 +346,7 @@ pub async fn send_proxied_message(
             DBMessage {
                 message_id: new_message.id.0.get(),
                 user_id: message.author.id.0.get(),
+                mate_name: Some(mate.name),
             },
             None,
         )
