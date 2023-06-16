@@ -1,5 +1,7 @@
 use anyhow::Result;
-use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, CreateMessage, Reaction};
+use poise::serenity_prelude::{
+    CacheHttp, Context as SerenityContext, CreateEmbed, CreateMessage, Reaction,
+};
 
 use crate::{
     commands::Data,
@@ -25,13 +27,36 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                 .await?;
         }
     } else if reaction.emoji.unicode_eq("❓") {
+        let real_message = ctx
+            .http()
+            .get_message(reaction.channel_id, reaction.message_id)
+            .await?;
+
         reaction
             .user(ctx.http())
             .await?
             .direct_message(
                 ctx.http(),
                 CreateMessage::new()
-                    .content(format!("Message sent by <@{}>", original_message.user_id)),
+                    //.content(format!("Message sent by <@{}>", original_message.user_id)),
+                    .embeds(vec![CreateEmbed::new()
+                        .title("Message Info")
+                        .field("User", format!("<@{}>", original_message.user_id), false)
+                        .field("Mate", "Not currently implemented!", false) // FIXME: implement
+                        .field(
+                            "Message",
+                            format!(
+                                "{} ([jump to message]({}))",
+                                utils::clamp_message_length(&real_message.content),
+                                real_message.link()
+                            ),
+                            false,
+                        )
+                        .field(
+                            "Timestamp",
+                            format!("<t:{}>", real_message.timestamp.timestamp()),
+                            false,
+                        )]),
             )
             .await?;
         reaction.delete(ctx.http()).await?;

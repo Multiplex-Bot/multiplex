@@ -10,6 +10,7 @@ use poise::{
         WebhookId,
     },
 };
+use secrecy::ExposeSecret;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage};
@@ -117,7 +118,7 @@ pub async fn get_webhook_or_create(
         let channel = DBChannel {
             id: channel_id.get() as i64,
             webhook_id: webhook.id.get() as i64,
-            webhook_token: webhook.token.clone().unwrap(),
+            webhook_token: webhook.token.as_ref().unwrap().expose_secret().clone(),
         };
 
         collection
@@ -243,6 +244,16 @@ pub fn get_autoproxied_mate<'a>(mates: &'a Vec<DBMate>) -> Option<&'a DBMate> {
     None
 }
 
+pub fn clamp_message_length(content: &String) -> String {
+    let replied_graphemes = content.graphemes(true).collect::<Vec<&str>>();
+
+    if replied_graphemes.len() > 100 {
+        replied_graphemes[..100].join("")
+    } else {
+        replied_graphemes.join("")
+    }
+}
+
 pub async fn send_proxied_message(
     http: &Http,
     message: &Message,
@@ -283,25 +294,6 @@ pub async fn send_proxied_message(
         ));
 
     if let Some(referenced_message) = &message.referenced_message {
-        let mut embed = CreateEmbed::new();
-        let replied_graphemes = referenced_message
-            .content
-            .graphemes(true)
-            .collect::<Vec<&str>>();
-
-        let replied_content;
-        if replied_graphemes.len() > 100 {
-            replied_content = replied_graphemes[..100].join("")
-        } else {
-            replied_content = replied_graphemes.join("")
-        }
-
-        embed = embed.description(format!(
-            "{} ([jump to message]({}))",
-            replied_content,
-            referenced_message.link()
-        ));
-
         let author = CreateEmbedAuthor::new(format!(
             "{} ⤵️",
             referenced_message
@@ -315,7 +307,14 @@ pub async fn send_proxied_message(
                 .avatar_url()
                 .unwrap_or(std::env::var("DEFAULT_AVATAR_URL")?),
         );
-        embed = embed.author(author);
+
+        let embed = CreateEmbed::new()
+            .description(format!(
+                "{} ([jump to message]({}))",
+                clamp_message_length(&referenced_message.content),
+                referenced_message.link()
+            ))
+            .author(author);
 
         builder = builder.embed(embed);
     }

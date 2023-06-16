@@ -72,11 +72,10 @@ pub async fn info(
 
         let mates = utils::get_all_mates(&mates_collection, user_id).await?;
 
-        let mut final_embed = CreateEmbed::new().title(
-            collective
-                .name
-                .unwrap_or(format!("{}'s Collective", ctx.author().name)),
-        );
+        let mut final_embed = CreateEmbed::new().title(collective.name.unwrap_or(format!(
+            "{}'s Collective",
+            ctx.author().global_name.clone().unwrap_or(ctx.author().name.clone())
+        )));
 
         if let Some(bio) = collective.bio {
             final_embed = final_embed.field("Bio", bio, false);
