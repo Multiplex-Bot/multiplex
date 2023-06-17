@@ -112,5 +112,5 @@ async fn main() {
     .await
     .unwrap();
 
-    client.start_autosharded().await.unwrap();
+    client.start().await.unwrap();
 }

@@ -96,9 +96,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
                 )
                 .await?;
         }
-        command => {
-            println!("Unknown command {}", command);
-        }
+        _ => {}
     }
     Ok(())
 }

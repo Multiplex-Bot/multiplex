@@ -1,9 +1,13 @@
-use std::num::NonZeroU64;
+use std::{num::NonZeroU64, time::Duration};
 
 use anyhow::{bail, Context, Result};
 use mongodb::bson::doc;
 use poise::{
-    serenity_prelude::{self as serenity, CreateEmbed, UserId},
+    serenity_prelude::{
+        self as serenity, collector::ComponentInteractionCollector, futures::stream::StreamExt,
+        CacheHttp, CreateActionRow, CreateButton, CreateEmbed, CreateInteractionResponse,
+        CreateInteractionResponseMessage, UserId,
+    },
     CreateReply,
 };
 
@@ -13,9 +17,8 @@ use crate::{
     utils,
 };
 
-// FIXME: make this less bad
 /// Get the info of a user's collective or one of their mates
-#[poise::command(slash_command, ephemeral)]
+#[poise::command(slash_command)]
 pub async fn info(
     ctx: CommandContext<'_>,
     #[description = "the name of the user you want to get information from (defaults to you if unspecified)"]
@@ -66,15 +69,21 @@ pub async fn info(
 
         ctx.send(CreateReply::new().embed(final_embed)).await?;
     } else {
+        let user = ctx.http().get_user(user_id).await?;
+
         let collectives_collection = database.collection::<DBCollective>("collectives");
-
         let collective = utils::get_or_create_collective(&collectives_collection, user_id).await?;
-
         let mates = utils::get_all_mates(&mates_collection, user_id).await?;
+
+        let ctx_id = ctx.id();
+        let prev_button_id = format!("{}prev", ctx_id);
+        let next_button_id = format!("{}next", ctx_id);
+
+        let mut current_page = 0;
 
         let mut final_embed = CreateEmbed::new().title(collective.name.unwrap_or(format!(
             "{}'s Collective",
-            ctx.author().global_name.clone().unwrap_or(ctx.author().name.clone())
+            user.global_name.clone().unwrap_or(user.name.clone())
         )));
 
         if let Some(bio) = collective.bio {
@@ -85,27 +94,90 @@ pub async fn info(
             final_embed = final_embed.field("Pronouns", pronouns, false);
         }
 
-        let mut mates_content = "".to_string();
-        for mate in mates.iter() {
-            if let Some(display_name) = mate.display_name.clone() {
-                mates_content = format!(
-                    "{}\n{} *({})*",
-                    mates_content,
-                    display_name.replace('*', "\\*"),
-                    mate.name.replace('*', "\\*")
-                )
-            } else {
-                mates_content = format!("{}\n{}", mates_content, mate.name.replace('*', "\\*"))
-            }
-        }
-
-        mates_content = mates_content.trim().to_string();
+        let mates_content = mates
+            .iter()
+            .map(|m| {
+                if let Some(display_name) = m.display_name.clone() {
+                    format!(
+                        "{} *({})*",
+                        display_name.replace('*', "\\*"),
+                        m.name.replace('*', "\\*")
+                    )
+                } else {
+                    m.name.replace('*', "\\*")
+                }
+            })
+            .collect::<Vec<_>>();
 
         if !mates_content.is_empty() {
-            final_embed = final_embed.field("Mates", mates_content, false);
-        }
+            let mut reply = CreateReply::new().embed(final_embed.clone().field(
+                "Mates",
+                mates_content[0..=4.min(mates_content.len() - 1)].join("\n"),
+                false,
+            ));
 
-        ctx.send(CreateReply::new().embed(final_embed)).await?;
+            if 4 < mates_content.len() - 1 {
+                reply = reply.components(vec![CreateActionRow::Buttons(vec![
+                    CreateButton::new(&prev_button_id).label("<"),
+                    CreateButton::new(&next_button_id).label(">"),
+                ])]);
+            }
+
+            ctx.send(reply).await?;
+
+            if 4 >= mates_content.len() - 1 {
+                return Ok(());
+            }
+
+            let mut collector = ComponentInteractionCollector::new(&ctx.discord().shard)
+                .timeout(Duration::from_secs(300))
+                .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
+                .stream();
+
+            while let Some(press) = collector.next().await {
+                if press.data.custom_id == next_button_id {
+                    current_page += 1;
+
+                    if current_page * 4 >= mates_content.len() - 1 {
+                        current_page = 0;
+                    }
+                } else if press.data.custom_id == prev_button_id {
+                    current_page = current_page.checked_sub(1).unwrap_or(0)
+                }
+
+                press
+                    .create_response(
+                        ctx.cache_and_http(),
+                        CreateInteractionResponse::UpdateMessage(
+                            CreateInteractionResponseMessage::new().embed(
+                                final_embed.clone().field(
+                                    "Mates",
+                                    mates_content[(4 * current_page) + {
+                                        if current_page == 0 {
+                                            0
+                                        } else {
+                                            1
+                                        }
+                                    }
+                                        ..=((4 * current_page) + {
+                                            if current_page == 0 {
+                                                4
+                                            } else {
+                                                5
+                                            }
+                                        })
+                                        .min(mates_content.len() - 1)]
+                                        .join("\n"),
+                                    false,
+                                ),
+                            ),
+                        ),
+                    )
+                    .await?;
+            }
+        } else {
+            ctx.send(CreateReply::new().embed(final_embed)).await?;
+        }
     }
 
     Ok(())
