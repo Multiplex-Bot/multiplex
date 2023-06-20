@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, Collection};
 use orderless::impl_orderless;
-use poise::serenity_prelude::Http;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{parse_selector, upload_avatar};
+use crate::utils::parse_selector;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DBMate {
@@ -54,7 +53,6 @@ impl DBMate {
 
     pub async fn edit(
         &mut self,
-        http: &Http,
         collection: Collection<DBMate>,
         name: Option<String>,
         display_name: Option<String>,
@@ -62,7 +60,7 @@ impl DBMate {
         pronouns: Option<String>, // where d Joe get those proNOUNS fro m,,,,  ? The pronoun sto are 🤣🤣🤣  ?? !!,,, Their gender ? (/j)
         selector: Option<String>,
         publicity: Option<bool>,
-        avatar: Option<poise::serenity_prelude::Attachment>,
+        avatar: Option<String>,
     ) -> Result<()> {
         let current_name = self.name.clone();
 
@@ -70,24 +68,24 @@ impl DBMate {
             self.name = name
         }
 
-        if let Some(display_name) = display_name {
-            self.display_name = Some(display_name)
+        if display_name.is_some() {
+            self.display_name = display_name
         }
 
-        if let Some(bio) = bio {
-            self.bio = Some(bio)
+        if bio.is_some() {
+            self.bio = bio
         }
 
-        if let Some(pronouns) = pronouns {
-            self.pronouns = Some(pronouns)
+        if pronouns.is_some() {
+            self.pronouns = pronouns
         }
 
         let (prefix, postfix) = parse_selector(selector);
-        if let Some(prefix) = prefix {
-            self.prefix = Some(prefix)
+        if prefix.is_some() {
+            self.prefix = prefix;
         }
-        if let Some(postfix) = postfix {
-            self.postfix = Some(postfix)
+        if postfix.is_some() {
+            self.postfix = postfix;
         }
 
         if let Some(publicity) = publicity {
@@ -95,7 +93,7 @@ impl DBMate {
         }
 
         if let Some(avatar) = avatar {
-            self.avatar = upload_avatar(http, avatar).await?;
+            self.avatar = avatar;
         }
 
         collection
@@ -153,16 +151,17 @@ impl DBCollective {
         is_public: Option<bool>,
         collective_tag: Option<String>,
     ) -> Result<()> {
-        if let Some(name) = name {
-            self.name = Some(name)
+        if name.is_some() {
+            self.name = name
         }
 
-        if let Some(bio) = bio {
-            self.bio = Some(bio)
+        if bio.is_some() {
+            self.bio = bio
         }
 
-        if let Some(pronouns) = pronouns {
-            self.pronouns = Some(pronouns)
+        if pronouns.is_some() {
+            // WHRERED JOE GED THEIR PRONOUBCE FROM ??! THE PRONONNCE ORE 🖐️🖐️🖐️🙄🙄🙄
+            self.pronouns = pronouns;
         }
 
         if let Some(is_public) = is_public {

@@ -18,7 +18,7 @@ use crate::{
 };
 
 /// Get the info of a user's collective or one of their mates
-#[poise::command(slash_command)]
+#[poise::command(slash_command, ephemeral)]
 pub async fn info(
     ctx: CommandContext<'_>,
     #[description = "the name of the user you want to get information from (defaults to you if unspecified)"]

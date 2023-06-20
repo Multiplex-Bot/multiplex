@@ -35,11 +35,16 @@ pub async fn mate(
 
     let mates_collection = database.collection::<DBMate>("mates");
 
+    let mut avatar_url = None;
+
+    if let Some(avatar) = avatar {
+        avatar_url = Some(utils::upload_avatar(ctx.http(), avatar).await?);
+    }
+
     utils::get_mate(&mates_collection, ctx.author().id, name.clone())
         .await
         .context("Failed to find mate to edit; does it exist?")?
         .edit(
-            ctx.http(),
             mates_collection,
             None,
             display_name,
@@ -47,7 +52,7 @@ pub async fn mate(
             pronouns,
             selector,
             publicity,
-            avatar,
+            avatar_url,
         )
         .await?;
 
