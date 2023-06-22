@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use mongodb::bson::doc;
-use poise::serenity_prelude::{self as serenity, CacheHttp};
+use poise::serenity_prelude::{self as serenity};
 
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{

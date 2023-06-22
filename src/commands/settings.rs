@@ -2,7 +2,7 @@ use anyhow::Result;
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 
-use super::{mate, CommandContext};
+use super::{CommandContext};
 use crate::models::{AutoproxySettings, DBUserSettings};
 
 #[poise::command(slash_command, subcommands("autoproxy"))]
@@ -38,11 +38,11 @@ impl AutoproxySlashOptions {
 #[poise::command(slash_command, ephemeral)]
 pub async fn autoproxy(
     ctx: CommandContext<'_>,
-    autoproxy: AutoproxySlashOptions,
-    #[description = "If specified, automatically proxy as this mate"] mate: Option<String>,
+    _autoproxy: AutoproxySlashOptions,
+    #[description = "If specified, automatically proxy as this mate"] _mate: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
 
-    let settings_collection = database.collection::<DBUserSettings>("settings");
+    let _settings_collection = database.collection::<DBUserSettings>("settings");
     Ok(())
 }

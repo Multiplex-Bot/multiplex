@@ -11,13 +11,12 @@ use poise::{
         WebhookId,
     },
 };
-use s3::{bucket, Bucket};
+use s3::{Bucket};
 use secrecy::ExposeSecret;
 use unicode_segmentation::UnicodeSegmentation;
 use urlencoding::encode;
 
 use crate::{
-    commands::mate,
     models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage},
 };
 
@@ -209,7 +208,11 @@ pub async fn upload_avatar(
     mate_name: String,
     attachment: Attachment,
 ) -> Result<String> {
-    let file_ext = mime2ext(attachment.content_type.clone().context("The file does not have a mime type; this should not be possible. What arcane magic did you use?")?).context("Failed to convert detected file type to extension!")?;
+    let file_ext = mime2ext(attachment.content_type.clone().context(
+        "The file does not have a mime type; this should not be possible. What arcane magic did \
+         you use?",
+    )?)
+    .context("Failed to convert detected file type to extension!")?;
 
     avatar_bucket
         .put_object(

@@ -7,7 +7,7 @@ mod utils;
 
 use std::{env, num::NonZeroU64};
 
-use anyhow::Context;
+
 use commands::Data;
 use dotenvy::dotenv;
 use mongodb::{options::ClientOptions, Client as MongoClient};

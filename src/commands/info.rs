@@ -21,9 +21,11 @@ use crate::{
 #[poise::command(slash_command, ephemeral)]
 pub async fn info(
     ctx: CommandContext<'_>,
-    #[description = "the name of the user you want to get information from (defaults to you if unspecified)"]
+    #[description = "the name of the user you want to get information from (defaults to you if \
+                     unspecified)"]
     user: Option<serenity::User>,
-    #[description = "the name of the mate you want to get information about (if unspecified, gets collective information)"]
+    #[description = "the name of the mate you want to get information about (if unspecified, gets \
+                     collective information)"]
     mate: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;

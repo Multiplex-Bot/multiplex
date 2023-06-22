@@ -107,11 +107,16 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
         switches: vec![],
     };
 
-    ctx.send(CreateReply::new()
-        .content("Exported data! (Warning: This download may not work properly on mobile devices, because Discord doesn't know how to program.)").attachment(CreateAttachment::bytes(
-            serde_json::to_vec(&export).unwrap(),
-            "multiplex-export.json".to_string(),
-        ))
+    ctx.send(
+        CreateReply::new()
+            .content(
+                "Exported data! (Warning: This download may not work properly on mobile devices, \
+                 because Discord doesn't know how to program.)",
+            )
+            .attachment(CreateAttachment::bytes(
+                serde_json::to_vec(&export).unwrap(),
+                "multiplex-export.json".to_string(),
+            )),
     )
     .await?;
 

@@ -45,7 +45,11 @@ pub async fn tupperbox(
             .await?;
     }
 
-    ctx.say("Successfully imported Tupperbox export! (Note: exported Tuppers may have taken precedence over any existing mates. If so, sorry! They're unrecoverable!)").await?;
+    ctx.say(
+        "Successfully imported Tupperbox export! (Note: exported Tuppers may have taken \
+         precedence over any existing mates. If so, sorry! They're unrecoverable!)",
+    )
+    .await?;
 
     Ok(())
 }
@@ -86,7 +90,12 @@ pub async fn multiplex(
             .await?;
     }
 
-    ctx.say("Successfully imported Multiplex export! (Note: exported Members may have taken precedence over any existing mates, and your collective information was completely overwritten with whatever you gave us. If so, sorry! They're unrecoverable!)").await?;
+    ctx.say(
+        "Successfully imported Multiplex export! (Note: exported Members may have taken \
+         precedence over any existing mates, and your collective information was completely \
+         overwritten with whatever you gave us. If so, sorry! They're unrecoverable!)",
+    )
+    .await?;
 
     Ok(())
 }
@@ -127,7 +136,12 @@ pub async fn pluralkit(
             .await?;
     }
 
-    ctx.say("Successfully imported Pluralkit export! (Note: exported Members may have taken precedence over any existing mates, and your collective information was completely overwritten with whatever PK gave us. If so, sorry! They're unrecoverable!)").await?;
+    ctx.say(
+        "Successfully imported Pluralkit export! (Note: exported Members may have taken \
+         precedence over any existing mates, and your collective information was completely \
+         overwritten with whatever PK gave us. If so, sorry! They're unrecoverable!)",
+    )
+    .await?;
 
     Ok(())
 }
