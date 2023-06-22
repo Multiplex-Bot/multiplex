@@ -11,6 +11,7 @@ pub mod settings;
 use anyhow::Error;
 use mongodb::{options::FindOneAndUpdateOptions, Database};
 use once_cell::sync::Lazy;
+use s3::Bucket;
 
 pub static UPSERT_OPTIONS: Lazy<Option<FindOneAndUpdateOptions>> = Lazy::new(|| {
     Some(
@@ -22,5 +23,6 @@ pub static UPSERT_OPTIONS: Lazy<Option<FindOneAndUpdateOptions>> = Lazy::new(|| 
 
 pub struct Data {
     pub database: Database,
+    pub avatar_bucket: Bucket,
 }
 pub type CommandContext<'a> = poise::Context<'a, Data, Error>;

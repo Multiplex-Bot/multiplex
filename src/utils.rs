@@ -1,6 +1,7 @@
 use std::num::NonZeroU64;
 
 use anyhow::{bail, Context, Result};
+use mime2ext::mime2ext;
 use mongodb::{bson::doc, options::FindOneOptions, results::DeleteResult, Collection, Database};
 use poise::{
     futures_util::TryStreamExt,
@@ -10,10 +11,15 @@ use poise::{
         WebhookId,
     },
 };
+use s3::{bucket, Bucket};
 use secrecy::ExposeSecret;
 use unicode_segmentation::UnicodeSegmentation;
+use urlencoding::encode;
 
-use crate::models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage};
+use crate::{
+    commands::mate,
+    models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage},
+};
 
 pub async fn get_mate(
     collection: &Collection<DBMate>,
@@ -197,21 +203,28 @@ pub fn parse_selector(selector: Option<String>) -> (Option<String>, Option<Strin
     (prefix, postfix)
 }
 
-pub async fn upload_avatar(http: &Http, attachment: Attachment) -> Result<String> {
-    let new_message = http
-        .send_message(
-            std::env::var("AVATAR_CHANNEL")
-                .unwrap()
-                .parse::<u64>()?
-                .into(),
-            vec![CreateAttachment::bytes(
-                &*attachment.download().await?,
-                attachment.filename.as_str(),
-            )],
-            &serde_json::Map::new(),
+pub async fn upload_avatar(
+    avatar_bucket: &Bucket,
+    user_id: UserId,
+    mate_name: String,
+    attachment: Attachment,
+) -> Result<String> {
+    let file_ext = mime2ext(attachment.content_type.clone().context("The file does not have a mime type; this should not be possible. What arcane magic did you use?")?).context("Failed to convert detected file type to extension!")?;
+
+    avatar_bucket
+        .put_object(
+            format!("/{}/{}.{}", user_id.get(), mate_name, file_ext),
+            &*attachment.download().await?,
         )
         .await?;
-    Ok(new_message.attachments[0].url.clone())
+
+    Ok(format!(
+        "{}/{}/{}.{}",
+        std::env::var("PUBLIC_AVATAR_URL").unwrap(),
+        user_id.get(),
+        encode(&mate_name),
+        file_ext
+    ))
 }
 
 pub fn is_thread(channel: &GuildChannel) -> bool {

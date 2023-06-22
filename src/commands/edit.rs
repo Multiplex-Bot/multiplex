@@ -38,7 +38,15 @@ pub async fn mate(
     let mut avatar_url = None;
 
     if let Some(avatar) = avatar {
-        avatar_url = Some(utils::upload_avatar(ctx.http(), avatar).await?);
+        avatar_url = Some(
+            utils::upload_avatar(
+                &ctx.data().avatar_bucket,
+                ctx.author().id,
+                name.clone(),
+                avatar,
+            )
+            .await?,
+        );
     }
 
     utils::get_mate(&mates_collection, ctx.author().id, name.clone())

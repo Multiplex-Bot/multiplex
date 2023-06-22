@@ -198,3 +198,17 @@ pub struct DBMessage {
     pub message_id: u64,
     pub mate_name: Option<String>,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum AutoproxySettings {
+    None,
+    SwitchedIn,
+    Latch,
+    Mate(String),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DBUserSettings {
+    user_id: u64,
+    autoproxy: AutoproxySettings,
+}

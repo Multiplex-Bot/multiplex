@@ -7,6 +7,7 @@ mod utils;
 
 use std::{env, num::NonZeroU64};
 
+use anyhow::Context;
 use commands::Data;
 use dotenvy::dotenv;
 use mongodb::{options::ClientOptions, Client as MongoClient};
@@ -14,6 +15,7 @@ use poise::{
     serenity_prelude::{CacheHttp, Client, Command, FullEvent, GatewayIntents, GuildId},
     Framework,
 };
+use s3::{creds::Credentials, region::Region, Bucket};
 
 #[tokio::main]
 async fn main() {
@@ -37,6 +39,27 @@ async fn main() {
         &env::var("DATABASE_NAME")
             .expect("Could not find database name; did you specify it in .env?"),
     );
+
+    let avatar_bucket = Bucket::new(
+        &env::var("S3_AVATAR_BUCKET")
+            .expect("Could not find avatar bucket name; did you specify it in .env?"),
+        Region::Custom {
+            region: env::var("S3_REGION")
+                .expect("Could not find S3 region; did you specify it in .env?"),
+            endpoint: env::var("S3_ENDPOINT")
+                .expect("Could not find S3 endpoint; did you specify it in .env?"),
+        },
+        Credentials::new(
+            Some(&env::var("S3_KEY_ID").unwrap()),
+            Some(&env::var("S3_KEY_SECRET").unwrap()),
+            None,
+            None,
+            None,
+        )
+        .unwrap(),
+    )
+    .unwrap()
+    .with_path_style();
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -106,7 +129,10 @@ async fn main() {
                     "Using global slash commands; warning, this may take literally forever"
                 );
             }
-            Ok(Data { database: db })
+            Ok(Data {
+                database: db,
+                avatar_bucket,
+            })
         })
     }))
     .await
