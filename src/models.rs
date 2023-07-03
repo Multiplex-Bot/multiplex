@@ -201,14 +201,21 @@ pub struct DBMessage {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum AutoproxySettings {
-    None,
+    Disabled,
     SwitchedIn,
-    Latch,
+    Latch(Latch),
     Mate(String),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DBUserSettings {
-    user_id: u64,
-    autoproxy: AutoproxySettings,
+    pub user_id: u64,
+    pub guild_id: Option<i64>,
+    pub autoproxy: Option<AutoproxySettings>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Latch {
+    Guild(Option<String>),
+    Global(Option<String>),
 }

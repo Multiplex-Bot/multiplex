@@ -2,22 +2,28 @@ use std::{borrow::Cow, env, num::NonZeroU64};
 
 use anyhow::{bail, Context, Result};
 use mime2ext::mime2ext;
-use mongodb::{bson::doc, options::FindOneOptions, results::DeleteResult, Collection, Database};
+use mongodb::{
+    bson::{self, doc},
+    options::FindOneOptions,
+    results::DeleteResult,
+    Collection, Database,
+};
 use poise::{
     futures_util::TryStreamExt,
     serenity_prelude::{
         Attachment, ChannelId, ChannelType, CreateAttachment, CreateEmbed, CreateEmbedAuthor,
-        CreateWebhook, ExecuteWebhook, GuildChannel, Http, Message, MessageId, UserId, Webhook,
-        WebhookId,
+        CreateWebhook, ExecuteWebhook, GuildChannel, GuildId, Http, Message, MessageId, UserId,
+        Webhook, WebhookId,
     },
 };
-use s3::{Bucket};
+use s3::Bucket;
 use secrecy::ExposeSecret;
 use unicode_segmentation::UnicodeSegmentation;
 use urlencoding::encode;
 
-use crate::{
-    models::{DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage},
+use crate::models::{
+    AutoproxySettings, DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage,
+    DBUserSettings, Latch,
 };
 
 pub async fn get_mate(
@@ -78,6 +84,73 @@ pub async fn get_or_create_collective(
 
         Ok(new_collective)
     }
+}
+
+pub async fn get_or_create_settings(
+    collection: &Collection<DBUserSettings>,
+    user_id: UserId,
+    guild_id: Option<i64>,
+) -> Result<DBUserSettings> {
+    let settings = collection
+        .find_one(
+            doc! { "user_id": user_id.get() as i64, "guild_id": guild_id },
+            None,
+        )
+        .await?;
+
+    if let Some(mut settings) = settings {
+        if settings.guild_id.is_some() {
+            let user_settings = collection
+                .find_one(doc! { "user_id": user_id.get() as i64 }, None)
+                .await;
+
+            if let Ok(Some(user_settings)) = user_settings {
+                if settings.autoproxy.is_none() {
+                    settings.autoproxy = user_settings.autoproxy;
+                }
+            }
+        }
+
+        Ok(settings)
+    } else {
+        let new_settings = DBUserSettings {
+            user_id: user_id.get(),
+            autoproxy: Some(AutoproxySettings::SwitchedIn),
+            guild_id: guild_id,
+        };
+
+        collection
+            .insert_one(new_settings.clone(), None)
+            .await
+            .context("Failed to create new user settings in database; try again later!")?;
+
+        Ok(new_settings)
+    }
+}
+
+pub async fn update_settings(
+    collection: &Collection<DBUserSettings>,
+    settings: DBUserSettings,
+    autoproxy: Option<AutoproxySettings>,
+) -> Result<()> {
+    let mut new_settings = settings.clone();
+
+    if autoproxy.is_some() {
+        new_settings.autoproxy = autoproxy;
+    }
+
+    collection
+        .update_one(
+            doc! {
+                "user_id": new_settings.user_id as i64,
+                "guild_id": new_settings.guild_id
+            },
+            doc! { "$set": bson::to_bson(&new_settings).unwrap() },
+            None,
+        )
+        .await?;
+
+    Ok(())
 }
 
 pub async fn get_webhook_or_create(
@@ -261,13 +334,47 @@ pub fn get_matching_mate<'a>(
     None
 }
 
-pub fn get_autoproxied_mate<'a>(mates: &'a Vec<DBMate>) -> Option<&'a DBMate> {
-    for mate in mates {
-        if mate.autoproxy {
-            return Some(mate);
+pub async fn get_autoproxied_mate<'a>(
+    settings_collection: &Collection<DBUserSettings>,
+    mates: &'a Vec<DBMate>,
+    user_id: UserId,
+    guild_id: GuildId,
+) -> Option<&'a DBMate> {
+    let Ok(user_settings) =
+        get_or_create_settings(settings_collection, user_id, Some(guild_id.get() as i64)).await
+            else { return None };
+
+    match user_settings.autoproxy {
+        Some(AutoproxySettings::Disabled) => None,
+        Some(AutoproxySettings::SwitchedIn) => {
+            for mate in mates {
+                if mate.autoproxy {
+                    return Some(mate);
+                }
+            }
+            None
         }
+        Some(AutoproxySettings::Latch(latch)) => {
+            let mate_name = match latch {
+                Latch::Guild(Some(guild)) => {
+                    // not sure if this is actually needed
+                    if user_settings.guild_id == Some(guild_id.get() as i64) {
+                        Some(guild)
+                    } else {
+                        None
+                    }
+                }
+                Latch::Global(Some(global)) => Some(global),
+                _ => None,
+            }?;
+
+            Some(mates.iter().filter(|mate| mate.name == mate_name).next()?)
+        }
+        Some(AutoproxySettings::Mate(mate_name)) => {
+            Some(mates.iter().filter(|mate| mate.name == mate_name).next()?)
+        }
+        None => None,
     }
-    None
 }
 
 pub fn clamp_message_length(content: &String) -> String {
@@ -377,6 +484,46 @@ pub async fn send_proxied_message(
             None,
         )
         .await?;
+
+    Ok(())
+}
+
+pub async fn update_latch(
+    settings_collection: &Collection<DBUserSettings>,
+    message: &Message,
+    new: Option<String>,
+) -> Result<()> {
+    let guild_settings = get_or_create_settings(
+        &settings_collection,
+        message.author.id,
+        message
+            .guild_id
+            .and_then(|guild_id| Some(guild_id.get() as i64)),
+    )
+    .await?;
+
+    match guild_settings.autoproxy {
+        Some(AutoproxySettings::Latch(Latch::Global(_))) => {
+            let global_settings =
+                get_or_create_settings(&settings_collection, message.author.id, None).await?;
+
+            update_settings(
+                &settings_collection,
+                global_settings,
+                Some(AutoproxySettings::Latch(Latch::Global(new))),
+            )
+            .await?;
+        }
+        Some(AutoproxySettings::Latch(Latch::Guild(_))) => {
+            update_settings(
+                &settings_collection,
+                guild_settings,
+                Some(AutoproxySettings::Latch(Latch::Guild(new))),
+            )
+            .await?;
+        }
+        _ => {}
+    }
 
     Ok(())
 }

@@ -3,15 +3,20 @@ use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, MessageUpda
 
 use crate::{
     commands::Data,
-    models::{DBCollective, DBMate},
+    models::{DBCollective, DBMate, DBUserSettings},
     utils,
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEvent) -> Result<()> {
+    if message.author.as_ref().and_then(|author| Some(author.bot)) == Some(true) {
+        return Ok(());
+    }
+
     let database = &data.database;
 
     let mates_collection = database.collection::<DBMate>("mates");
     let collectives_collection = database.collection::<DBCollective>("collectives");
+    let settings_collection = database.collection::<DBUserSettings>("settings");
 
     let message = ctx
         .http()
@@ -20,8 +25,21 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEven
 
     let mates = utils::get_all_mates(&mates_collection, message.author.id).await?;
 
-    let mate = utils::get_matching_mate(&mates, &message.content)
-        .or_else(|| utils::get_autoproxied_mate(&mates));
+    if mates.len() == 0 {
+        return Ok(());
+    }
+
+    let mut mate = utils::get_matching_mate(&mates, &message.content);
+
+    if mate.is_none() {
+        mate = utils::get_autoproxied_mate(
+            &settings_collection,
+            &mates,
+            message.author.id,
+            message.guild_id.unwrap(),
+        )
+        .await
+    }
 
     if let Some(mate) = mate {
         let collective =

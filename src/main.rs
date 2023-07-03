@@ -73,6 +73,7 @@ async fn main() {
             commands::info::info(),
             commands::import::import(),
             commands::export::export(),
+            commands::settings::settings(),
         ],
         listener: |event, _framework, data| {
             Box::pin(async move {

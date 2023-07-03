@@ -3,21 +3,51 @@ use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message};
 
 use crate::{
     commands::Data,
-    models::{DBCollective, DBMate},
+    models::{DBCollective, DBMate, DBUserSettings},
     utils,
 };
 
-// FIXME: impl latch switching
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
+    if message.author.bot {
+        return Ok(());
+    }
+
     let database = &data.database;
 
     let mates_collection = database.collection::<DBMate>("mates");
     let collectives_collection = database.collection::<DBCollective>("collectives");
+    let settings_collection = database.collection::<DBUserSettings>("settings");
 
     let mates = utils::get_all_mates(&mates_collection, message.author.id).await?;
 
-    let mate = utils::get_matching_mate(&mates, &message.content)
-        .or_else(|| utils::get_autoproxied_mate(&mates));
+    if mates.len() == 0 {
+        return Ok(());
+    }
+
+    let mut mate = utils::get_matching_mate(&mates, &message.content);
+
+    if message.content.starts_with("\\") {
+        utils::update_latch(&settings_collection, message, None).await?;
+
+        return Ok(());
+    }
+
+    if mate.is_none() {
+        mate = utils::get_autoproxied_mate(
+            &settings_collection,
+            &mates,
+            message.author.id,
+            message.guild_id.unwrap(),
+        )
+        .await
+    } else {
+        utils::update_latch(
+            &settings_collection,
+            message,
+            Some(mate.unwrap().name.clone()),
+        )
+        .await?;
+    }
 
     if let Some(mate) = mate {
         let collective =

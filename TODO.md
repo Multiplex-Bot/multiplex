@@ -5,3 +5,4 @@
 - [ ] Dashboard(?)
 - [x] Editing real messages to resend them as proxied
 - [x] Work in Text-In-Voice channels (tup or pk do?)
+- [x] Latch proxying
