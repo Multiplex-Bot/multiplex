@@ -115,7 +115,11 @@ pub async fn get_or_create_settings(
     } else {
         let new_settings = DBUserSettings {
             user_id: user_id.get(),
-            autoproxy: Some(AutoproxySettings::SwitchedIn),
+            autoproxy: if guild_id.is_some() {
+                None
+            } else {
+                Some(AutoproxySettings::SwitchedIn)
+            },
             guild_id: guild_id,
         };
 
