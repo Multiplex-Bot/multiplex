@@ -113,7 +113,7 @@ pub async fn get_or_create_settings(
 
         Ok(settings)
     } else {
-        let new_settings = DBUserSettings {
+        let mut new_settings = DBUserSettings {
             user_id: user_id.get(),
             autoproxy: if guild_id.is_some() {
                 None
@@ -127,6 +127,16 @@ pub async fn get_or_create_settings(
             .insert_one(new_settings.clone(), None)
             .await
             .context("Failed to create new user settings in database; try again later!")?;
+
+        let user_settings = collection
+            .find_one(doc! { "user_id": user_id.get() as i64 }, None)
+            .await;
+
+        if let Ok(Some(user_settings)) = user_settings {
+            if new_settings.autoproxy.is_none() {
+                new_settings.autoproxy = user_settings.autoproxy;
+            }
+        }
 
         Ok(new_settings)
     }
