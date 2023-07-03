@@ -72,6 +72,8 @@ pub async fn message(
             .delete_message(ctx.http(), thread_id, message_to_delete_id)
             .await?;
 
+        utils::delete_dbmessage(&messages_collection, message_to_delete_id).await?;
+
         ctx.say("Deleted message! o7 :headstone:").await?;
         Ok(())
     } else {

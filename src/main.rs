@@ -7,7 +7,7 @@ mod utils;
 
 use std::{env, num::NonZeroU64};
 
-
+use axum::{routing::get, Router};
 use commands::Data;
 use dotenvy::dotenv;
 use mongodb::{options::ClientOptions, Client as MongoClient};
@@ -16,6 +16,14 @@ use poise::{
     Framework,
 };
 use s3::{creds::Credentials, region::Region, Bucket};
+use tokio::task::JoinSet;
+
+fn envvar(var: &str) -> String {
+    env::var(var).expect(&format!(
+        "Could not find {}; did you specify it in .env?",
+        var
+    ))
+}
 
 #[tokio::main]
 async fn main() {
@@ -24,34 +32,26 @@ async fn main() {
     dotenv()
         .expect("Could not find environment config; did you forget to `cp .env.template .env`?");
 
-    let mut client_options = ClientOptions::parse(
-        env::var("DATABASE_URL").expect("Cound not find database URL; did you specify it in .env?"),
-    )
-    .await
-    .expect("Failed to create MongoDB client options! (Somehow)");
+    let mut client_options = ClientOptions::parse(envvar("DATABASE_URL"))
+        .await
+        .expect("Failed to create MongoDB client options! (Somehow)");
 
     client_options.app_name = Some("Multiplex".to_string());
 
     let client =
         MongoClient::with_options(client_options).expect("Failed to open MongoDB connection!");
 
-    let db = client.database(
-        &env::var("DATABASE_NAME")
-            .expect("Could not find database name; did you specify it in .env?"),
-    );
+    let db = client.database(&envvar("DATABASE_NAME"));
 
     let avatar_bucket = Bucket::new(
-        &env::var("S3_AVATAR_BUCKET")
-            .expect("Could not find avatar bucket name; did you specify it in .env?"),
+        &envvar("S3_AVATAR_BUCKET"),
         Region::Custom {
-            region: env::var("S3_REGION")
-                .expect("Could not find S3 region; did you specify it in .env?"),
-            endpoint: env::var("S3_ENDPOINT")
-                .expect("Could not find S3 endpoint; did you specify it in .env?"),
+            region: envvar("S3_REGION"),
+            endpoint: envvar("S3_ENDPOINT"),
         },
         Credentials::new(
-            Some(&env::var("S3_KEY_ID").unwrap()),
-            Some(&env::var("S3_KEY_SECRET").unwrap()),
+            Some(&envvar("S3_KEY_ID")),
+            Some(&envvar("S3_KEY_SECRET")),
             None,
             None,
             None,
@@ -84,9 +84,7 @@ async fn main() {
                         tracing::info!("Bot is ready!")
                     }
                     FullEvent::Message { ctx, new_message } => {
-                        if new_message.content.starts_with(&env::var("PREFIX").expect(
-                            "Could not find text command prefix; did you specify it in .env?",
-                        )) {
+                        if new_message.content.starts_with(&envvar("PREFIX")) {
                             events::on_text_command::run(ctx, data, new_message).await?
                         } else {
                             events::on_message::run(ctx, data, new_message).await?
@@ -111,7 +109,7 @@ async fn main() {
     };
 
     let mut client = Client::builder(
-        env::var("TOKEN").expect("$TOKEN not found; did you specify it in .env?"),
+        envvar("TOKEN"),
         GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT,
     )
     .framework(Framework::new(options, |ctx, _ready, framework| {
@@ -138,5 +136,22 @@ async fn main() {
     .await
     .unwrap();
 
-    client.start().await.unwrap();
+    let mut threads = JoinSet::new();
+
+    threads.spawn(async move {
+        client.start().await.unwrap();
+    });
+
+    threads.spawn(async move {
+        let app = Router::new().route("/health", get(|| async { "( •̀ ω •́ )✧" }));
+
+        axum::Server::bind(&envvar("HEALTH_CHECK_ADDRESS").parse().unwrap())
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    });
+
+    while threads.is_empty() == false {
+        // do nothing
+    }
 }

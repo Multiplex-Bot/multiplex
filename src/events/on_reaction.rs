@@ -27,6 +27,8 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
             webhook
                 .delete_message(ctx.http(), thread_id, reaction.message_id)
                 .await?;
+
+            utils::delete_dbmessage(&messages_collection, reaction.message_id).await?;
         }
     } else if reaction.emoji.unicode_eq("❓") {
         let webhook_message = ctx

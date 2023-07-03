@@ -1,4 +1,4 @@
-use std::num::NonZeroU64;
+use std::{borrow::Cow, env, num::NonZeroU64};
 
 use anyhow::{bail, Context, Result};
 use mime2ext::mime2ext;
@@ -175,6 +175,16 @@ pub async fn get_message(
     Ok(dbmessage)
 }
 
+pub async fn delete_dbmessage(
+    collection: &Collection<DBMessage>,
+    message_id: MessageId,
+) -> Result<DeleteResult> {
+    collection
+        .delete_one(doc! { "message_id": message_id.get() as i64 }, None)
+        .await
+        .context("Database failed to delete message; try again later!")
+}
+
 pub fn parse_selector(selector: Option<String>) -> (Option<String>, Option<String>) {
     let real_selector: String;
 
@@ -223,7 +233,7 @@ pub async fn upload_avatar(
 
     Ok(format!(
         "{}/{}/{}.{}",
-        std::env::var("PUBLIC_AVATAR_URL").unwrap(),
+        env::var("PUBLIC_AVATAR_URL").unwrap(),
         user_id.get(),
         encode(&mate_name),
         file_ext
@@ -341,7 +351,7 @@ pub async fn send_proxied_message(
         }
         let download = attachment.download().await?;
         builder = builder.add_file(CreateAttachment::bytes(
-            std::borrow::Cow::Owned(download),
+            Cow::Owned(download),
             attachment.filename.clone(),
         ))
     }
