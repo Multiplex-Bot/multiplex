@@ -418,7 +418,7 @@ pub fn clamp_message_length(content: &String) -> String {
     let replied_graphemes = content.graphemes(true).collect::<Vec<&str>>();
 
     if replied_graphemes.len() > 100 {
-        replied_graphemes[..100].join("")
+        format!("{}...", replied_graphemes[..100].join(""))
     } else {
         replied_graphemes.join("")
     }
@@ -438,20 +438,19 @@ pub async fn send_proxied_message(
         get_webhook_or_create(http, &channels_collection, message.channel_id).await?;
 
     let new_content = message.content.clone();
+    let new_content = message
+        .content
+        .clone()
+        .strip_prefix(&mate.prefix.clone().unwrap_or_default())
+        .unwrap_or(&new_content)
+        .strip_suffix(&mate.postfix.clone().unwrap_or_default())
+        .unwrap_or(&new_content)
+        .to_string();
 
     let mut builder = ExecuteWebhook::new();
 
     builder = builder
-        .content(
-            message
-                .content
-                .clone()
-                .strip_prefix(&mate.prefix.clone().unwrap_or_default())
-                .unwrap_or(&new_content)
-                .strip_suffix(&mate.postfix.clone().unwrap_or_default())
-                .unwrap_or(&new_content)
-                .to_string(),
-        )
+        .content(new_content.clone())
         .avatar_url(mate.avatar)
         .username(format!(
             "{} {}",
@@ -487,6 +486,13 @@ pub async fn send_proxied_message(
             .author(author);
 
         builder = builder.embed(embed);
+
+        if message.mentions_user_id(referenced_message.author.id) {
+            builder = builder.content(format!(
+                "{} ||<@{}>||",
+                new_content, referenced_message.author.id
+            ))
+        }
     }
 
     for attachment in message.attachments.iter() {
