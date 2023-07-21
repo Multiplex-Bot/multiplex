@@ -91,6 +91,12 @@ pub async fn get_or_create_settings(
     user_id: UserId,
     guild_id: Option<i64>,
 ) -> Result<DBUserSettings> {
+    fn fallback(settings: &mut DBUserSettings, fallback_settings: DBUserSettings) {
+        if settings.autoproxy.is_none() {
+            settings.autoproxy = fallback_settings.autoproxy;
+        }
+    }
+
     let settings = collection
         .find_one(
             doc! { "user_id": user_id.get() as i64, "guild_id": guild_id },
@@ -101,13 +107,14 @@ pub async fn get_or_create_settings(
     if let Some(mut settings) = settings {
         if settings.guild_id.is_some() {
             let user_settings = collection
-                .find_one(doc! { "user_id": user_id.get() as i64 }, None)
+                .find_one(
+                    doc! { "user_id": user_id.get() as i64, "guild_id": None::<i64> },
+                    None,
+                )
                 .await;
 
             if let Ok(Some(user_settings)) = user_settings {
-                if settings.autoproxy.is_none() {
-                    settings.autoproxy = user_settings.autoproxy;
-                }
+                fallback(&mut settings, user_settings);
             }
         }
 
@@ -124,17 +131,33 @@ pub async fn get_or_create_settings(
         };
 
         collection
-            .insert_one(new_settings.clone(), None)
+            .insert_one(&new_settings, None)
             .await
             .context("Failed to create new user settings in database; try again later!")?;
 
-        let user_settings = collection
-            .find_one(doc! { "user_id": user_id.get() as i64 }, None)
-            .await;
+        if guild_id.is_some() {
+            let user_settings = collection
+                .find_one(
+                    doc! { "user_id": user_id.get() as i64, "guild_id": None::<i64> },
+                    None,
+                )
+                .await;
 
-        if let Ok(Some(user_settings)) = user_settings {
-            if new_settings.autoproxy.is_none() {
-                new_settings.autoproxy = user_settings.autoproxy;
+            if let Ok(Some(user_settings)) = user_settings {
+                fallback(&mut new_settings, user_settings);
+            } else {
+                let new_user_settings = DBUserSettings {
+                    user_id: user_id.get(),
+                    autoproxy: Some(AutoproxySettings::SwitchedIn),
+                    guild_id: None,
+                };
+
+                collection
+                    .insert_one(&new_user_settings, None)
+                    .await
+                    .context("Failed to create new user settings in database; try again later!")?;
+
+                fallback(&mut new_settings, new_user_settings);
             }
         }
 

@@ -39,7 +39,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
             message.author.id,
             message.guild_id.unwrap(),
         )
-        .await
+        .await;
     } else {
         utils::update_latch(
             &settings_collection,
