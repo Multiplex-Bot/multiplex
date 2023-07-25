@@ -7,7 +7,7 @@ use poise::{
 };
 
 use super::CommandContext;
-use crate::models::DBMate;
+use crate::{envvar, models::DBMate};
 
 /// Get the statistics of the bot
 #[poise::command(slash_command, ephemeral)]
@@ -41,6 +41,18 @@ pub async fn ping(ctx: CommandContext<'_>) -> Result<()> {
     ctx.say(format!(
         "Pong :3 ({}ms)",
         (ctx.created_at().time() - Utc::now().time()).num_milliseconds()
+    ))
+    .await?;
+
+    Ok(())
+}
+
+/// Join the support server!
+#[poise::command(slash_command, ephemeral)]
+pub async fn support(ctx: CommandContext<'_>) -> Result<()> {
+    ctx.say(format!(
+        "Join the support & discussion server at {}!", // fucked up
+        envvar("SUPPORT_INVITE")
     ))
     .await?;
 

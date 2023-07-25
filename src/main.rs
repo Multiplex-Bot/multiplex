@@ -65,6 +65,7 @@ async fn main() {
         commands: vec![
             commands::misc::explain(),
             commands::misc::ping(),
+            commands::misc::support(),
             commands::misc::stats(),
             commands::mate::create(),
             commands::delete::delete(),
