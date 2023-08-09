@@ -11,7 +11,7 @@ axum = "0.6.18"
 chrono = "0.4.26"
 dotenvy = "0.15.7"
 mime2ext = "0.1.52"
-mongodb = "2.4.0"
+mongodb = { version = "2.4.0", features = ["bson-chrono-0_4"] }
 once_cell = "1.17.1"
 orderless = "0.1.5"
 poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }

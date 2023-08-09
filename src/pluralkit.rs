@@ -1,4 +1,5 @@
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use poise::serenity_prelude::UserId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -6,7 +7,7 @@ use serde_json::Value;
 use crate::models::{DBCollective, DBCollective__new, DBMate, DBMate__new};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PluralkitExport {
+pub struct PluralkitExport<'a> {
     pub version: i64,
     pub id: String,
     pub uuid: String,
@@ -17,17 +18,19 @@ pub struct PluralkitExport {
     pub avatar_url: Option<String>,
     pub banner: Option<String>,
     pub color: Option<String>,
-    pub created: String,
+    pub created: DateTime<Utc>,
     pub webhook_url: Option<String>,
-    pub privacy: SystemPrivacy,
+    #[serde(borrow)]
+    pub privacy: SystemPrivacy<'a>,
     pub config: Config,
     pub accounts: Vec<i64>,
-    pub members: Vec<Member>,
+    #[serde(borrow)]
+    pub members: Vec<Member<'a>>,
     pub groups: Vec<Value>,
     pub switches: Vec<Switch>,
 }
 
-impl PluralkitExport {
+impl<'a> PluralkitExport<'a> {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
         Ok(DBCollective__new! {
             user_id = user_id.0.get() as i64,
@@ -41,22 +44,33 @@ impl PluralkitExport {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct SystemPrivacy {
-    pub description_privacy: String,
-    pub pronoun_privacy: String,
-    pub member_list_privacy: String,
-    pub group_list_privacy: String,
-    pub front_privacy: String,
-    pub front_history_privacy: String,
+pub struct SystemPrivacy<'a> {
+    pub description_privacy: &'a str,
+    pub pronoun_privacy: &'a str,
+    pub member_list_privacy: &'a str,
+    pub group_list_privacy: &'a str,
+    pub front_privacy: &'a str,
+    pub front_history_privacy: &'a str,
 }
 
-impl SystemPrivacy {
+impl<'a> SystemPrivacy<'a> {
     pub fn is_private(&self) -> Result<bool> {
         Ok(serde_json::to_string(&self)?.contains("\"private\""))
     }
+
+    pub fn create_from_single(privacy: &'a str) -> Self {
+        SystemPrivacy::<'a> {
+            description_privacy: privacy,
+            pronoun_privacy: privacy,
+            member_list_privacy: privacy,
+            group_list_privacy: privacy,
+            front_privacy: privacy,
+            front_history_privacy: privacy,
+        }
+    }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub timezone: String,
     pub pings_enabled: bool,
@@ -70,8 +84,25 @@ pub struct Config {
     pub description_templates: Vec<()>,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            timezone: "UTC".to_string(),
+            pings_enabled: false,
+            case_sensitive_proxy_tags: true,
+            latch_timeout: None,
+            member_default_private: false,
+            show_private_info: false,
+            group_default_private: false,
+            member_limit: 1000,
+            group_limit: 250,
+            description_templates: vec![],
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Member {
+pub struct Member<'a> {
     pub id: String,
     pub uuid: String,
     pub name: String,
@@ -83,16 +114,17 @@ pub struct Member {
     pub webhook_avatar_url: Option<String>,
     pub banner: Option<String>,
     pub description: Option<String>,
-    pub created: String,
+    pub created: DateTime<Utc>,
     pub keep_proxy: bool,
     pub autoproxy_enabled: bool,
     pub message_count: i64,
     pub last_message_timestamp: Option<String>,
     pub proxy_tags: Vec<ProxyTag>,
-    pub privacy: MemberPrivacy,
+    #[serde(borrow)]
+    pub privacy: MemberPrivacy<'a>,
 }
 
-impl Member {
+impl<'a> Member<'a> {
     pub fn to_mate(&self, user_id: UserId) -> Result<DBMate> {
         let proxy_tags = self.proxy_tags.get(0).unwrap_or(&ProxyTag {
             prefix: None,
@@ -124,19 +156,31 @@ pub struct ProxyTag {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MemberPrivacy {
-    pub visibility: String,
-    pub name_privacy: String,
-    pub description_privacy: String,
-    pub birthday_privacy: String,
-    pub pronoun_privacy: String,
-    pub avatar_privacy: String,
-    pub metadata_privacy: String,
+pub struct MemberPrivacy<'a> {
+    pub visibility: &'a str,
+    pub name_privacy: &'a str,
+    pub description_privacy: &'a str,
+    pub birthday_privacy: &'a str,
+    pub pronoun_privacy: &'a str,
+    pub avatar_privacy: &'a str,
+    pub metadata_privacy: &'a str,
 }
 
-impl MemberPrivacy {
+impl<'a> MemberPrivacy<'a> {
     pub fn is_private(&self) -> Result<bool> {
         Ok(serde_json::to_string(&self)?.contains("\"private\""))
+    }
+
+    pub fn create_from_single(privacy: &'a str) -> Self {
+        MemberPrivacy::<'a> {
+            description_privacy: privacy,
+            pronoun_privacy: privacy,
+            avatar_privacy: privacy,
+            birthday_privacy: privacy,
+            metadata_privacy: privacy,
+            name_privacy: privacy,
+            visibility: privacy,
+        }
     }
 }
 

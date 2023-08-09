@@ -1,5 +1,8 @@
 use anyhow::{Context, Result};
-use mongodb::{bson::doc, Collection};
+use mongodb::{
+    bson::{doc, oid::ObjectId},
+    Collection,
+};
 use orderless::impl_orderless;
 use serde::{Deserialize, Serialize};
 
@@ -7,6 +10,8 @@ use crate::utils::parse_selector;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DBMate {
+    #[serde(rename = "_id", skip_serializing)]
+    pub id: Option<ObjectId>,
     pub user_id: i64,
     pub autoproxy: bool,
     pub name: String,
@@ -23,7 +28,7 @@ pub struct DBMate {
 impl DBMate {
     #[make_orderless(
         public = true,
-        defs(bio = None, prefix = None, postfix = None, pronouns = None, display_name = None),
+        defs(bio = None, prefix = None, postfix = None, pronouns = None, display_name = None, id = None),
     )]
     pub fn new(
         user_id: i64,
@@ -36,6 +41,7 @@ impl DBMate {
         postfix: Option<String>,
         pronouns: Option<String>,
         display_name: Option<String>,
+        id: Option<ObjectId>,
     ) -> DBMate {
         DBMate {
             user_id,
@@ -48,6 +54,7 @@ impl DBMate {
             postfix,
             pronouns,
             display_name,
+            id,
         }
     }
 
@@ -110,6 +117,8 @@ impl DBMate {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DBCollective {
+    #[serde(rename = "_id", skip_serializing)]
+    pub id: Option<ObjectId>,
     pub user_id: i64,
     pub is_public: bool,
     pub name: Option<String>,
@@ -122,7 +131,7 @@ pub struct DBCollective {
 impl DBCollective {
     #[make_orderless(
         public = true,
-        defs(name = None, bio = None, pronouns = None, collective_tag = None),
+        defs(name = None, bio = None, pronouns = None, collective_tag = None, id = None),
     )]
     pub fn new(
         user_id: i64,
@@ -131,6 +140,7 @@ impl DBCollective {
         bio: Option<String>,
         pronouns: Option<String>,
         collective_tag: Option<String>,
+        id: Option<ObjectId>,
     ) -> DBCollective {
         DBCollective {
             user_id,
@@ -139,6 +149,7 @@ impl DBCollective {
             bio,
             pronouns,
             collective_tag,
+            id,
         }
     }
 
@@ -183,6 +194,12 @@ impl DBCollective {
 
         Ok(())
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DBGuild {
+    pub id: i64,
+    pub proxy_logs_channel_id: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -26,11 +26,19 @@ pub async fn stats(ctx: CommandContext<'_>) -> Result<()> {
     let mate_count = mates_collection.count_documents(None, None).await?;
     let guild_count = cache.guild_count();
 
-    ctx.say(format!(
+    /* ctx.say(format!(
         "Serving **{}** users (with **{}** mates) in **{}** guilds!",
         user_count, mate_count, guild_count,
     ))
-    .await?;
+    .await?; */
+
+    let embed = CreateEmbed::new().title("Stats").fields(vec![
+        ("Users", user_count.to_string(), false),
+        ("Mates", mate_count.to_string(), false),
+        ("Guilds", guild_count.to_string(), false),
+    ]);
+
+    ctx.send(CreateReply::new().embed(embed)).await?;
 
     Ok(())
 }

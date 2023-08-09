@@ -5,7 +5,7 @@ use poise::{serenity_prelude::CreateAttachment, CreateReply};
 use super::CommandContext;
 use crate::{
     models::{DBCollective, DBMate},
-    pluralkit::{Config, Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy},
+    pluralkit::{Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy},
     utils,
 };
 
@@ -26,46 +26,34 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
         "public"
     } else {
         "private"
-    }
-    .to_string();
+    };
 
-    // FIXME: this is the worst function anybody has ever laid eyes on
     let export = PluralkitExport {
         version: 2,
         name: collective.name,
         description: collective.bio,
+        // impossible for the id to not exist
+        created: collective.id.unwrap().timestamp().to_chrono(),
         pronouns: collective.pronouns,
-        privacy: SystemPrivacy {
-            description_privacy: collective_privacy_str.clone(),
-            pronoun_privacy: collective_privacy_str.clone(),
-            member_list_privacy: collective_privacy_str.clone(),
-            group_list_privacy: collective_privacy_str.clone(),
-            front_privacy: collective_privacy_str.clone(),
-            front_history_privacy: collective_privacy_str,
-        },
+        privacy: SystemPrivacy::create_from_single(collective_privacy_str),
         members: mates
             .iter()
             .map(|mate| {
-                let privacy_str = if mate.is_public { "public" } else { "private" }.to_string();
+                let privacy_str = if mate.is_public { "public" } else { "private" };
+
                 Member {
                     name: mate.name.clone(),
                     display_name: mate.display_name.clone(),
                     pronouns: mate.pronouns.clone(),
                     avatar_url: Some(mate.avatar.clone()),
                     description: mate.bio.clone(),
+                    // impossible for the id to not exist
+                    created: mate.id.unwrap().timestamp().to_chrono(),
                     proxy_tags: vec![ProxyTag {
                         prefix: mate.prefix.clone(),
                         suffix: mate.postfix.clone(),
                     }],
-                    privacy: MemberPrivacy {
-                        visibility: privacy_str.clone(),
-                        name_privacy: privacy_str.clone(),
-                        description_privacy: privacy_str.clone(),
-                        birthday_privacy: privacy_str.clone(),
-                        pronoun_privacy: privacy_str.clone(),
-                        avatar_privacy: privacy_str.clone(),
-                        metadata_privacy: privacy_str,
-                    },
+                    privacy: MemberPrivacy::create_from_single(privacy_str),
                     // useless pluralkit garbage
                     autoproxy_enabled: true,
                     keep_proxy: false,
@@ -73,35 +61,22 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
                     birthday: None,
                     color: None,
                     webhook_avatar_url: None,
-                    created: "".to_string(),
                     message_count: 0,
                     last_message_timestamp: None,
-                    id: "".to_string(),
-                    uuid: "".to_string(),
+                    id: Default::default(),
+                    uuid: Default::default(),
                 }
             })
             .collect::<Vec<Member>>(),
         tag: collective.collective_tag,
         // useless pluralkit garbage: part 2
         avatar_url: None,
-        id: "".to_string(),
-        uuid: "".to_string(),
+        id: Default::default(),
+        uuid: Default::default(),
         banner: None,
         color: None,
-        created: "".to_string(),
         webhook_url: None,
-        config: Config {
-            timezone: "UTC".to_string(),
-            pings_enabled: false,
-            case_sensitive_proxy_tags: true,
-            latch_timeout: None,
-            member_default_private: false,
-            show_private_info: false,
-            group_default_private: false,
-            member_limit: 1000,
-            group_limit: 250,
-            description_templates: vec![],
-        },
+        config: Default::default(),
         accounts: vec![],
         groups: vec![],
         switches: vec![],

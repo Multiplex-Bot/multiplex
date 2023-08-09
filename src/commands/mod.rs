@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod autocomplete;
 pub mod delete;
 pub mod edit;
