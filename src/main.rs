@@ -5,7 +5,7 @@ mod pluralkit;
 mod tupperbox;
 mod utils;
 
-use std::{env, num::NonZeroU64};
+use std::{env, num::NonZeroU64, time::Duration};
 
 use axum::{routing::get, Router};
 use commands::Data;
@@ -16,7 +16,7 @@ use poise::{
     Framework,
 };
 use s3::{creds::Credentials, region::Region, Bucket};
-use tokio::task::JoinSet;
+use tokio::{task::JoinSet, time::sleep};
 
 fn envvar(var: &str) -> String {
     env::var(var).expect(&format!(
@@ -153,7 +153,7 @@ async fn main() {
             .unwrap();
     });
 
-    while threads.is_empty() == false {
-        // do nothing
+    while !threads.is_empty() {
+        sleep(Duration::from_secs(10)).await;
     }
 }
