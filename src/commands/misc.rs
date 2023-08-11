@@ -7,7 +7,7 @@ use poise::{
 };
 
 use super::CommandContext;
-use crate::{envvar, models::DBMate};
+use crate::{models::DBMate, utils::envvar};
 
 /// Get the statistics of the bot
 #[poise::command(slash_command, ephemeral)]

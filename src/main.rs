@@ -18,12 +18,7 @@ use poise::{
 use s3::{creds::Credentials, region::Region, Bucket};
 use tokio::{task::JoinSet, time::sleep};
 
-fn envvar(var: &str) -> String {
-    env::var(var).expect(&format!(
-        "Could not find {}; did you specify it in .env?",
-        var
-    ))
-}
+use crate::utils::envvar;
 
 #[tokio::main]
 async fn main() {
@@ -75,6 +70,7 @@ async fn main() {
             commands::import::import(),
             commands::export::export(),
             commands::settings::settings(),
+            commands::admin::admin(),
         ],
         listener: |event, _framework, data| {
             Box::pin(async move {

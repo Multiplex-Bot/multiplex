@@ -12,8 +12,8 @@ use poise::{
     futures_util::TryStreamExt,
     serenity_prelude::{
         Attachment, ChannelId, ChannelType, CreateAttachment, CreateEmbed, CreateEmbedAuthor,
-        CreateWebhook, ExecuteWebhook, GuildChannel, GuildId, Http, Message, MessageId, UserId,
-        Webhook, WebhookId,
+        CreateEmbedFooter, CreateWebhook, ExecuteWebhook, GuildChannel, GuildId, Http, Message,
+        MessageId, UserId, Webhook, WebhookId,
     },
 };
 use s3::Bucket;
@@ -22,7 +22,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use urlencoding::encode;
 
 use crate::models::{
-    AutoproxySettings, DBChannel, DBCollective, DBCollective__new, DBMate, DBMessage,
+    AutoproxySettings, DBChannel, DBCollective, DBCollective__new, DBGuild, DBMate, DBMessage,
     DBUserSettings, Latch,
 };
 
@@ -86,7 +86,7 @@ pub async fn get_or_create_collective(
     }
 }
 
-pub async fn get_or_create_settings(
+pub async fn get_or_create_user_settings(
     collection: &Collection<DBUserSettings>,
     user_id: UserId,
     guild_id: Option<i64>,
@@ -165,7 +165,7 @@ pub async fn get_or_create_settings(
     }
 }
 
-pub async fn update_settings(
+pub async fn update_user_settings(
     collection: &Collection<DBUserSettings>,
     settings: DBUserSettings,
     autoproxy: Option<AutoproxySettings>,
@@ -343,7 +343,7 @@ pub async fn upload_avatar(
 
     Ok(format!(
         "{}/{}/{}.{}",
-        env::var("PUBLIC_AVATAR_URL").unwrap(),
+        envvar("PUBLIC_AVATAR_URL"),
         user_id.get(),
         encode(&mate_name),
         file_ext
@@ -378,7 +378,7 @@ pub async fn get_autoproxied_mate<'a>(
     guild_id: GuildId,
 ) -> Option<&'a DBMate> {
     let Ok(user_settings) =
-        get_or_create_settings(settings_collection, user_id, Some(guild_id.get() as i64)).await
+        get_or_create_user_settings(settings_collection, user_id, Some(guild_id.get() as i64)).await
             else { return None };
 
     match user_settings.autoproxy {
@@ -433,6 +433,7 @@ pub async fn send_proxied_message(
 ) -> Result<()> {
     let channels_collection = database.collection::<DBChannel>("channels");
     let messages_collection = database.collection::<DBMessage>("messages");
+    let guilds_collection = database.collection::<DBGuild>("guilds");
 
     let (webhook, thread_id) =
         get_webhook_or_create(http, &channels_collection, message.channel_id).await?;
@@ -451,15 +452,15 @@ pub async fn send_proxied_message(
 
     builder = builder
         .content(new_content.clone())
-        .avatar_url(mate.avatar)
+        .avatar_url(mate.avatar.clone())
         .username(format!(
             "{} {}",
-            if let Some(display_name) = mate.display_name {
+            if let Some(display_name) = mate.display_name.clone() {
                 display_name
             } else {
                 mate.name.clone()
             },
-            collective.collective_tag.unwrap_or_default()
+            collective.collective_tag.clone().unwrap_or_default()
         ));
 
     if let Some(referenced_message) = &message.referenced_message {
@@ -474,7 +475,7 @@ pub async fn send_proxied_message(
             referenced_message
                 .author
                 .avatar_url()
-                .unwrap_or(std::env::var("DEFAULT_AVATAR_URL")?),
+                .unwrap_or(envvar("DEFAULT_AVATAR_URL")),
         );
 
         let embed = CreateEmbed::new()
@@ -522,11 +523,76 @@ pub async fn send_proxied_message(
             DBMessage {
                 message_id: new_message.id.0.get(),
                 user_id: message.author.id.0.get(),
-                mate_name: Some(mate.name),
+                mate_name: Some(mate.name.clone()),
             },
             None,
         )
         .await?;
+
+    let guild_config =
+        get_or_create_dbguild(&guilds_collection, message.guild_id.unwrap().get() as i64).await?;
+
+    if let Some(proxy_logs_channel_id) = guild_config.proxy_logs_channel_id {
+        send_server_proxy_log(
+            http,
+            message,
+            &new_message,
+            mate,
+            &channels_collection,
+            proxy_logs_channel_id,
+        )
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn send_server_proxy_log(
+    http: &Http,
+    message: &Message,
+    webhook_message: &Message,
+    mate: DBMate,
+    channels_collection: &Collection<DBChannel>,
+    proxy_logs_channel_id: i64,
+) -> Result<()> {
+    let webhook = get_webhook_or_create(
+        http,
+        &channels_collection,
+        // SAFETY: due to the chain of database-required type changes, this is fine to unwrap as `proxy_logs_channel_id` can never be zero
+        ChannelId(NonZeroU64::new(proxy_logs_channel_id as u64).unwrap()),
+    )
+    .await?;
+
+    let embed = CreateEmbed::new()
+        .title(format!("Message proxied by `{}`", mate.name))
+        .description(message.content.clone())
+        .thumbnail(mate.avatar)
+        .fields(vec![
+            ("User", format!("<@{}>", message.author.id.get()), false),
+            ("Proxied Message", webhook_message.link(), false),
+        ])
+        .footer(CreateEmbedFooter::new(format!(
+            "Message ID: {} | Original message ID: {} | Channel ID: {} | User ID: {}",
+            webhook_message.id.get(),
+            message.id.get(),
+            message.channel_id.get(),
+            message.author.id
+        )));
+
+    let mut builder = ExecuteWebhook::new()
+        .username("Multiplex (Proxy Logs)")
+        .avatar_url(envvar("DEFAULT_AVATAR_URL"))
+        .embed(embed);
+
+    if let Some(thread_id) = webhook.1 {
+        builder = builder.in_thread(thread_id);
+    }
+
+    webhook
+        .0
+        .execute(http, true, builder)
+        .await?
+        .context("Failed to send proxied message")?;
 
     Ok(())
 }
@@ -536,7 +602,7 @@ pub async fn update_latch(
     message: &Message,
     new: Option<String>,
 ) -> Result<()> {
-    let guild_settings = get_or_create_settings(
+    let guild_settings = get_or_create_user_settings(
         &settings_collection,
         message.author.id,
         message
@@ -548,9 +614,9 @@ pub async fn update_latch(
     match guild_settings.autoproxy {
         Some(AutoproxySettings::Latch(Latch::Global(_))) => {
             let global_settings =
-                get_or_create_settings(&settings_collection, message.author.id, None).await?;
+                get_or_create_user_settings(&settings_collection, message.author.id, None).await?;
 
-            update_settings(
+            update_user_settings(
                 &settings_collection,
                 global_settings,
                 Some(AutoproxySettings::Latch(Latch::Global(new))),
@@ -558,7 +624,7 @@ pub async fn update_latch(
             .await?;
         }
         Some(AutoproxySettings::Latch(Latch::Guild(_))) => {
-            update_settings(
+            update_user_settings(
                 &settings_collection,
                 guild_settings,
                 Some(AutoproxySettings::Latch(Latch::Guild(new))),
@@ -569,4 +635,58 @@ pub async fn update_latch(
     }
 
     Ok(())
+}
+
+pub async fn get_or_create_dbguild(
+    collection: &Collection<DBGuild>,
+    guild_id: i64,
+) -> Result<DBGuild> {
+    let guild = collection.find_one(doc! { "id": guild_id }, None).await?;
+
+    if let Some(guild) = guild {
+        Ok(guild)
+    } else {
+        let new_guild = DBGuild {
+            id: guild_id,
+            proxy_logs_channel_id: None,
+        };
+
+        collection
+            .insert_one(new_guild.clone(), None)
+            .await
+            .context("Failed to create new guild in database; try again later!")?;
+
+        Ok(new_guild)
+    }
+}
+
+pub async fn update_guild_settings(
+    collection: &Collection<DBGuild>,
+    guild: DBGuild,
+    proxy_logs_channel_id: Option<i64>,
+) -> Result<()> {
+    let mut new_guild = guild.clone();
+
+    if proxy_logs_channel_id.is_some() {
+        new_guild.proxy_logs_channel_id = proxy_logs_channel_id;
+    }
+
+    collection
+        .update_one(
+            doc! {
+                "id": new_guild.id
+            },
+            doc! { "$set": bson::to_bson(&new_guild).unwrap() },
+            None,
+        )
+        .await?;
+
+    Ok(())
+}
+
+pub fn envvar(var: &str) -> String {
+    env::var(var).expect(&format!(
+        "Could not find {}; did you specify it in .env?",
+        var
+    ))
 }
