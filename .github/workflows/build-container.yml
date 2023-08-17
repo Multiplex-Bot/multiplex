@@ -21,8 +21,9 @@ jobs:
                     username: "${{ github.repository_owner }}"
                     password: "${{ secrets.GITHUB_TOKEN }}"
             -
-                name: Push image to GHCR
-                run: |
-                    docker buildx imagetools create \
-                        --tag ghcr.io/multiplex-bot/multiplex:latest \
-                        multiplex:latest
+                name: Build and push
+                uses: docker/build-push-action@v4
+                with:
+                    context: .
+                    push: true
+                    tags: ghcr.io/multiplex-bot/multiplex:latest
