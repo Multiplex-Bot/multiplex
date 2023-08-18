@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+    multiplex:
+        build: "."
+        volumes:
+            - ".env:/.env"
+        links:
+            - "mongo"
+        environment:
+            - "DATABASE_URL=mongodb://mongo:27017"
+
+    mongo:
+        image: "mongo:latest"
+        volumes:
+            - ./dev-database:/data/db
