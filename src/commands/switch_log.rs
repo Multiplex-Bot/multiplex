@@ -1,0 +1,1 @@
+`pub async fn switch_logs

@@ -4,7 +4,7 @@ use poise::serenity_prelude::{self as serenity};
 
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
-    models::{DBMate, DBMate__new},
+    models::{DBCollective, DBMate, DBMate__new},
     utils,
 };
 
@@ -26,7 +26,6 @@ pub async fn create(
     #[description = "the mate's pronouns"] pronouns: Option<String>,
 ) -> Result<()> {
     let database = &ctx.data().database;
-
     let mates_collection = database.collection::<DBMate>("mates");
 
     let old_mate = mates_collection
@@ -53,7 +52,7 @@ pub async fn create(
             )
             .await?;
         } else {
-            avatar_url = std::env::var("DEFAULT_AVATAR_URL").unwrap();
+            avatar_url = utils::envvar("DEFAULT_AVATAR_URL");
         }
 
         let mate = DBMate__new! {
@@ -88,6 +87,17 @@ pub async fn switch(
 ) -> Result<()> {
     let database = &ctx.data().database;
     let mates_collection = database.collection::<DBMate>("mates");
+    let collectives_collection = database.collection::<DBCollective>("collectives");
+
+    let previous_mate = mates_collection
+        .find_one(
+            doc! {"user_id": ctx.author().id.get() as i64, "autoproxy": true},
+            None,
+        )
+        .await?;
+
+    let collective =
+        utils::get_or_create_collective(&collectives_collection, ctx.author().id).await?;
 
     if let Some(name) = name {
         let mate = mates_collection
@@ -95,12 +105,12 @@ pub async fn switch(
                 doc! { "user_id": ctx.author().id.get() as i64, "name": name.clone() },
                 None,
             )
-            .await;
+            .await?;
 
-        if let Ok(Some(_)) = mate {
+        if let Some(mate) = mate {
             mates_collection
                 .update_one(
-                    doc! { "user_id": ctx.author().id.get() as i64, "autoproxy": true },
+                    doc! { "user_id": mate.user_id, "autoproxy": true },
                     doc! { "$set": {"autoproxy": false} },
                     None,
                 )
@@ -108,17 +118,31 @@ pub async fn switch(
 
             mates_collection
                 .update_one(
-                    doc! { "user_id": ctx.author().id.get() as i64, "name": name.clone() },
+                    doc! { "user_id": mate.user_id, "name": &name },
                     doc! { "$set": {"autoproxy": true} },
                     None,
                 )
                 .await?;
+
+            utils::update_switch_logs(
+                &collectives_collection,
+                &collective,
+                Some(mate.id.unwrap()),
+                previous_mate.and_then(|m| Some(m.id.unwrap())),
+            )
+            .await?;
 
             ctx.say(format!("Switched to {}!", name)).await?;
         } else {
             bail!("You need a mate with that name to switch to them!")
         }
     } else {
+        if previous_mate.is_none() {
+            ctx.say("No mate is currently switched in!").await?;
+
+            return Ok(());
+        }
+
         mates_collection
             .update_one(
                 doc! { "user_id": ctx.author().id.get() as i64, "autoproxy": true },
@@ -126,6 +150,14 @@ pub async fn switch(
                 None,
             )
             .await?;
+
+        utils::update_switch_logs(
+            &collectives_collection,
+            &collective,
+            None,
+            previous_mate.and_then(|m| Some(m.id.unwrap())),
+        )
+        .await?;
 
         ctx.say("Removed current switch!").await?;
     }

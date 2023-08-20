@@ -4,7 +4,10 @@ use poise::serenity_prelude::UserId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::models::{DBCollective, DBCollective__new, DBMate, DBMate__new};
+use crate::{
+    models::{DBCollective, DBCollective__new, DBMate, DBMate__new},
+    utils,
+};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PluralkitExport<'a> {
@@ -138,7 +141,7 @@ impl<'a> Member<'a> {
                 avatar = self
                     .avatar_url
                     .clone()
-                    .unwrap_or(std::env::var("DEFAULT_AVATAR_URL").unwrap()),
+                    .unwrap_or(utils::envvar("DEFAULT_AVATAR_URL")),
                 bio = self.description.clone(),
                 prefix = proxy_tags.prefix.clone(),
                 postfix = proxy_tags.suffix.clone(),

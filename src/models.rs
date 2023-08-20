@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use mongodb::{
     bson::{doc, oid::ObjectId},
     Collection,
@@ -125,13 +126,22 @@ pub struct DBCollective {
     pub bio: Option<String>,
     pub pronouns: Option<String>,
     pub collective_tag: Option<String>,
+    pub switch_logs: Option<Vec<SwitchLog>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SwitchLog {
+    pub date: DateTime<Utc>,
+    pub mate_id: Option<ObjectId>,
+    pub previous_mate_id: Option<ObjectId>,
+    pub unswitch: bool,
 }
 
 #[impl_orderless]
 impl DBCollective {
     #[make_orderless(
         public = true,
-        defs(name = None, bio = None, pronouns = None, collective_tag = None, id = None),
+        defs(name = None, bio = None, pronouns = None, collective_tag = None, id = None, switch_logs = None),
     )]
     pub fn new(
         user_id: i64,
@@ -141,6 +151,7 @@ impl DBCollective {
         pronouns: Option<String>,
         collective_tag: Option<String>,
         id: Option<ObjectId>,
+        switch_logs: Option<Vec<SwitchLog>>,
     ) -> DBCollective {
         DBCollective {
             user_id,
@@ -150,6 +161,7 @@ impl DBCollective {
             pronouns,
             collective_tag,
             id,
+            switch_logs,
         }
     }
 
@@ -229,6 +241,7 @@ pub struct DBUserSettings {
     pub user_id: u64,
     pub guild_id: Option<i64>,
     pub autoproxy: Option<AutoproxySettings>,
+    pub regex_sed_editing: Option<bool>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -71,6 +71,7 @@ async fn main() {
             commands::export::export(),
             commands::settings::settings(),
             commands::admin::admin(),
+            commands::switch_logs::switch_logs(),
         ],
         listener: |event, _framework, data| {
             Box::pin(async move {

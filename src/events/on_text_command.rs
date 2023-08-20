@@ -10,6 +10,7 @@ use poise::serenity_prelude::{
 use crate::{
     commands::Data,
     models::{DBChannel, DBMessage},
+    utils,
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
@@ -19,15 +20,13 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
 
     match message
         .content
-        .strip_prefix(&std::env::var("PREFIX").unwrap())
+        .strip_prefix(&utils::envvar("PREFIX"))
         .unwrap()
         .split_ascii_whitespace()
         .next()
         .unwrap()
     {
-        "edit" => {
-            message.delete(ctx.http()).await?;
-
+        "edit" | "e" => {
             let message_id;
             if let Some(message_ref) = message.referenced_message.clone() {
                 let message = messages_collection
@@ -50,6 +49,8 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
                     .context("Failed to get most recent message!")?;
                 message_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
             }
+
+            message.delete(ctx.http()).await?;
 
             let channel_id;
             let guild_channel = message
@@ -86,11 +87,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
                     EditWebhookMessage::new().content(
                         message
                             .content
-                            .strip_prefix(&format!(
-                                "{}{}",
-                                std::env::var("PREFIX").unwrap(),
-                                "edit"
-                            ))
+                            .strip_prefix(&format!("{}{}", utils::envvar("PREFIX"), "edit"))
                             .unwrap(),
                     ),
                 )

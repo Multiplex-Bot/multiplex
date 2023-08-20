@@ -1,9 +1,10 @@
 use std::{borrow::Cow, env, num::NonZeroU64};
 
 use anyhow::{bail, Context, Result};
+use chrono::Utc;
 use mime2ext::mime2ext;
 use mongodb::{
-    bson::{self, doc},
+    bson::{self, doc, oid::ObjectId},
     options::FindOneOptions,
     results::DeleteResult,
     Collection, Database,
@@ -23,7 +24,7 @@ use urlencoding::encode;
 
 use crate::models::{
     AutoproxySettings, DBChannel, DBCollective, DBCollective__new, DBGuild, DBMate, DBMessage,
-    DBUserSettings, Latch,
+    DBUserSettings, Latch, SwitchLog,
 };
 
 pub async fn get_mate(
@@ -128,6 +129,7 @@ pub async fn get_or_create_user_settings(
                 Some(AutoproxySettings::SwitchedIn)
             },
             guild_id: guild_id,
+            regex_sed_editing: if guild_id.is_some() { None } else { Some(true) },
         };
 
         collection
@@ -150,6 +152,7 @@ pub async fn get_or_create_user_settings(
                     user_id: user_id.get(),
                     autoproxy: Some(AutoproxySettings::SwitchedIn),
                     guild_id: None,
+                    regex_sed_editing: Some(true),
                 };
 
                 collection
@@ -682,6 +685,56 @@ pub async fn update_guild_settings(
         .await?;
 
     Ok(())
+}
+
+pub async fn update_switch_logs(
+    collection: &Collection<DBCollective>,
+    collective: &DBCollective,
+    mate_id: Option<ObjectId>,
+    previous_mate_id: Option<ObjectId>,
+) -> Result<()> {
+    let mut switch_logs = collective.switch_logs.clone().unwrap_or_default();
+
+    switch_logs.insert(
+        0,
+        SwitchLog {
+            date: Utc::now(),
+            mate_id,
+            previous_mate_id,
+            unswitch: mate_id.is_none(),
+        },
+    );
+
+    switch_logs.truncate(5);
+
+    collection
+        .update_one(
+            doc! { "user_id": collective.user_id},
+            doc! {
+                "$set": { "switch_logs": bson::to_bson(&switch_logs).unwrap() }
+            },
+            None,
+        )
+        .await?;
+
+    Ok(())
+}
+
+/// note: this should have the `s/` passed into it as a prefix
+pub fn handle_sed_edit(message_content: &String, sed_statement: &String) {
+    let mut i = 0;
+    let statement = sed_statement
+        .split(|character| {
+            let res = character == '/' && sed_statement.chars().nth(i - 1).unwrap_or(' ') != '\\';
+            i += 1;
+            return res;
+        })
+        .collect::<Vec<&str>>();
+
+    if statement[0] == "s" {
+    } else {
+        // not a sed statement idiot stupid goofy ahh mother Fucked
+    }
 }
 
 pub fn envvar(var: &str) -> String {

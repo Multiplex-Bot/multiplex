@@ -8,6 +8,7 @@ pub mod info;
 pub mod mate;
 pub mod misc;
 pub mod settings;
+pub mod switch_logs;
 
 use anyhow::Error;
 use mongodb::{options::FindOneAndUpdateOptions, Database};

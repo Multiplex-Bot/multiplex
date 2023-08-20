@@ -1,7 +1,10 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::models::{DBMate, DBMate__new};
+use crate::{
+    models::{DBMate, DBMate__new},
+    utils,
+};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TupperboxExport {
@@ -36,7 +39,7 @@ impl Tupper {
             avatar = if !self.avatar_url.is_empty() {
                 self.avatar_url.clone()
             } else {
-                std::env::var("DEFAULT_AVATAR_URL").unwrap()
+                utils::envvar("DEFAULT_AVATAR_URL")
             },
             is_public = true,
             bio = self.description.clone(),
