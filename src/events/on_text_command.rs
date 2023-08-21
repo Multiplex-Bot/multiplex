@@ -10,7 +10,7 @@ use poise::serenity_prelude::{
 use crate::{
     commands::Data,
     models::{DBChannel, DBMessage},
-    utils,
+    utils::misc::envvar,
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
@@ -20,7 +20,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
 
     match message
         .content
-        .strip_prefix(&utils::envvar("PREFIX"))
+        .strip_prefix(&envvar("PREFIX"))
         .unwrap()
         .split_ascii_whitespace()
         .next()
@@ -87,7 +87,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
                     EditWebhookMessage::new().content(
                         message
                             .content
-                            .strip_prefix(&format!("{}{}", utils::envvar("PREFIX"), "edit"))
+                            .strip_prefix(&format!("{}{}", envvar("PREFIX"), "edit"))
                             .unwrap(),
                     ),
                 )

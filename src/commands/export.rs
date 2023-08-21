@@ -6,7 +6,7 @@ use super::CommandContext;
 use crate::{
     models::{DBCollective, DBMate},
     pluralkit::{Member, MemberPrivacy, PluralkitExport, ProxyTag, SystemPrivacy},
-    utils,
+    utils::{collectives::get_or_create_collective, mates::get_all_mates},
 };
 
 /// Export your collective to a format (theoretically) compatible with both Tupperbox and Pluralkit
@@ -17,10 +17,9 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     let collectives_collection = database.collection::<DBCollective>("collectives");
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let collective =
-        utils::get_or_create_collective(&collectives_collection, ctx.author().id).await?;
+    let collective = get_or_create_collective(&collectives_collection, ctx.author().id).await?;
 
-    let mates = utils::get_all_mates(&mates_collection, ctx.author().id).await?;
+    let mates = get_all_mates(&mates_collection, ctx.author().id).await?;
 
     let collective_privacy_str = if collective.is_public {
         "public"

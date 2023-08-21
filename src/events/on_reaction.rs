@@ -8,7 +8,11 @@ use poise::serenity_prelude::{
 use crate::{
     commands::Data,
     models::{DBChannel, DBMate, DBMessage},
-    utils::{self, get_webhook_or_create},
+    utils::{
+        channels::get_webhook_or_create,
+        mates::get_mate,
+        messages::{clamp_message_length, delete_dbmessage, get_message},
+    },
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Result<()> {
@@ -16,8 +20,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
     let messages_collection = database.collection::<DBMessage>("messages");
     let channels_collection = database.collection::<DBChannel>("channels");
 
-    let original_message =
-        utils::get_message(&messages_collection, None, reaction.message_id).await?;
+    let original_message = get_message(&messages_collection, None, reaction.message_id).await?;
 
     let (webhook, thread_id) =
         get_webhook_or_create(ctx.http(), &channels_collection, reaction.channel_id).await?;
@@ -28,7 +31,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                 .delete_message(ctx.http(), thread_id, reaction.message_id)
                 .await?;
 
-            utils::delete_dbmessage(&messages_collection, reaction.message_id).await?;
+            delete_dbmessage(&messages_collection, reaction.message_id).await?;
         }
     } else if reaction.emoji.unicode_eq("❓") {
         let webhook_message = ctx
@@ -51,7 +54,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                             if let Some(mate_name) = original_message.mate_name {
                                 let mates_collection = database.collection::<DBMate>("mates");
 
-                                let mate = utils::get_mate(
+                                let mate = get_mate(
                                     &mates_collection,
                                     UserId(NonZeroU64::new(original_message.user_id).unwrap()),
                                     mate_name,
@@ -73,7 +76,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
                             "Message",
                             format!(
                                 "{} ([jump to message]({}))",
-                                utils::clamp_message_length(&webhook_message.content),
+                                clamp_message_length(&webhook_message.content),
                                 webhook_message.link()
                             ),
                             false,

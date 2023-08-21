@@ -18,7 +18,7 @@ use poise::{
 use s3::{creds::Credentials, region::Region, Bucket};
 use tokio::{task::JoinSet, time::sleep};
 
-use crate::utils::envvar;
+use crate::utils::misc::envvar;
 
 #[tokio::main]
 async fn main() {

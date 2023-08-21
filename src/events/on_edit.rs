@@ -4,7 +4,11 @@ use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, MessageUpda
 use crate::{
     commands::Data,
     models::{DBCollective, DBMate, DBUserSettings},
-    utils,
+    utils::{
+        collectives::get_or_create_collective,
+        mates::{get_all_mates, get_autoproxied_mate, get_matching_mate},
+        messages::send_proxied_message,
+    },
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEvent) -> Result<()> {
@@ -23,16 +27,16 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEven
         .get_message(message.channel_id, message.id)
         .await?;
 
-    let mates = utils::get_all_mates(&mates_collection, message.author.id).await?;
+    let mates = get_all_mates(&mates_collection, message.author.id).await?;
 
     if mates.len() == 0 {
         return Ok(());
     }
 
-    let mut mate = utils::get_matching_mate(&mates, &message.content);
+    let mut mate = get_matching_mate(&mates, &message.content);
 
     if mate.is_none() {
-        mate = utils::get_autoproxied_mate(
+        mate = get_autoproxied_mate(
             &settings_collection,
             &mates,
             message.author.id,
@@ -43,16 +47,10 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEven
 
     if let Some(mate) = mate {
         let collective =
-            utils::get_or_create_collective(&collectives_collection, message.author.id).await?;
+            get_or_create_collective(&collectives_collection, message.author.id).await?;
 
-        return utils::send_proxied_message(
-            ctx.http(),
-            &message,
-            mate.clone(),
-            collective,
-            database,
-        )
-        .await;
+        return send_proxied_message(ctx.http(), &message, mate.clone(), collective, database)
+            .await;
     }
 
     Ok(())
