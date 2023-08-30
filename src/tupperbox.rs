@@ -26,7 +26,7 @@ pub struct Tupper {
     pub tag: Option<String>,
     pub group_id: Option<i64>,
     pub group_pos: Option<i64>,
-    pub created_at: String,
+    pub created_at: Option<String>,
     pub nick: Option<String>,
 }
 
