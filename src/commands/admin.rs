@@ -2,7 +2,10 @@ use anyhow::Result;
 use poise::serenity_prelude::{self as serenity};
 
 use super::CommandContext;
-use crate::{models::DBGuild, utils};
+use crate::{
+    models::DBGuild,
+    utils::{guild_settings::update_guild_settings, guilds::get_or_create_dbguild},
+};
 
 // if required_permissions ever doesn't work or breaks we are FUCKED (capital-er f)
 
@@ -20,7 +23,7 @@ pub async fn proxy_logs(
 
     let guilds_collection = database.collection::<DBGuild>("guilds");
 
-    let guild = utils::get_or_create_dbguild(
+    let guild = get_or_create_dbguild(
         &guilds_collection,
         ctx.guild_id()
             .expect("Couldn't get the guild id! Are you running this command in DMs?")
@@ -31,12 +34,12 @@ pub async fn proxy_logs(
     if let Some(channel) = channel {
         let channel = channel.id().get() as i64;
 
-        utils::update_guild_settings(&guilds_collection, guild, Some(channel)).await?;
+        update_guild_settings(&guilds_collection, guild, Some(channel)).await?;
 
         ctx.say(format!("Set proxy logging channel to <#{}>", channel))
             .await?;
     } else {
-        utils::update_guild_settings(&guilds_collection, guild, None).await?;
+        update_guild_settings(&guilds_collection, guild, None).await?;
 
         ctx.say("Disabled proxy logging!").await?;
     }

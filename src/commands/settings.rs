@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use super::CommandContext;
 use crate::{
     models::{AutoproxySettings, DBUserSettings, Latch},
-    utils,
+    utils::user_settings::{get_or_create_user_settings, update_user_settings},
 };
 
 #[poise::command(slash_command, subcommands("autoproxy"))]
@@ -55,7 +55,7 @@ pub async fn autoproxy(
 
     let settings_collection = database.collection::<DBUserSettings>("settings");
 
-    let settings = utils::get_or_create_user_settings(
+    let settings = get_or_create_user_settings(
         &settings_collection,
         ctx.author().id,
         if guild_only == Some(true) || revert == Some(true) {
@@ -105,7 +105,7 @@ pub async fn autoproxy(
         _ => {}
     }
 
-    utils::update_user_settings(&settings_collection, settings, Some(new_autoproxy)).await?;
+    update_user_settings(&settings_collection, settings, Some(new_autoproxy)).await?;
 
     ctx.send(CreateReply::new().content("Successfully updated your autoproxy settings!"))
         .await?;

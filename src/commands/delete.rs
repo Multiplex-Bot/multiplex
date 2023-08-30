@@ -7,7 +7,12 @@ use poise::serenity_prelude::{CacheHttp, MessageId};
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
     models::{DBChannel, DBMate, DBMessage},
-    utils,
+    utils::{
+        channels::get_webhook_or_create,
+        mates::{delete_mate, get_mate},
+        messages::{delete_dbmessage, get_message, get_most_recent_message},
+        misc::message_link_to_id,
+    },
 };
 
 #[poise::command(slash_command, subcommands("mate", "message"))]
@@ -27,11 +32,11 @@ pub async fn mate(
 
     let mates_collection = database.collection::<DBMate>("mates");
 
-    utils::get_mate(&mates_collection, ctx.author().id, name.clone())
+    get_mate(&mates_collection, ctx.author().id, name.clone())
         .await
         .context("Failed to find mate; do they actually exist?")?;
 
-    utils::delete_mate(&mates_collection, ctx.author().id, name.clone()).await?;
+    delete_mate(&mates_collection, ctx.author().id, name.clone()).await?;
 
     ctx.say("Successfully deleted mate! o7 :headstone:").await?;
     Ok(())
@@ -51,16 +56,16 @@ pub async fn message(
     if let Some(message_id) = message_id {
         message_to_delete_id = MessageId(NonZeroU64::new(message_id).unwrap())
     } else if let Some(message_link) = message_link {
-        message_to_delete_id = utils::message_link_to_id(message_link)?
+        message_to_delete_id = message_link_to_id(message_link)?
     } else {
-        let message = utils::get_most_recent_message(&messages_collection, ctx.author().id).await?;
+        let message = get_most_recent_message(&messages_collection, ctx.author().id).await?;
         message_to_delete_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
     }
 
     let (webhook, thread_id) =
-        utils::get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
+        get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
 
-    let dbmessage = utils::get_message(
+    let dbmessage = get_message(
         &messages_collection,
         Some(ctx.author().id),
         message_to_delete_id,
@@ -72,7 +77,7 @@ pub async fn message(
             .delete_message(ctx.http(), thread_id, message_to_delete_id)
             .await?;
 
-        utils::delete_dbmessage(&messages_collection, message_to_delete_id).await?;
+        delete_dbmessage(&messages_collection, message_to_delete_id).await?;
 
         ctx.say("Deleted message! o7 :headstone:").await?;
         Ok(())

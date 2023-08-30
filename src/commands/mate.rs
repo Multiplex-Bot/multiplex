@@ -5,7 +5,11 @@ use poise::serenity_prelude::{self as serenity};
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
     models::{DBCollective, DBMate, DBMate__new},
-    utils,
+    utils::{
+        collectives::{get_or_create_collective, update_switch_logs},
+        messages::parse_selector,
+        misc::{envvar, upload_avatar},
+    },
 };
 
 /// Register a new mate
@@ -39,12 +43,12 @@ pub async fn create(
         ctx.say("You cannot have more than one mate with the same actual name!")
             .await?;
     } else {
-        let (prefix, postfix) = utils::parse_selector(selector);
+        let (prefix, postfix) = parse_selector(selector);
 
         let avatar_url;
 
         if let Some(avatar) = avatar {
-            avatar_url = utils::upload_avatar(
+            avatar_url = upload_avatar(
                 &ctx.data().avatar_bucket,
                 ctx.author().id,
                 name.clone(),
@@ -52,7 +56,7 @@ pub async fn create(
             )
             .await?;
         } else {
-            avatar_url = utils::envvar("DEFAULT_AVATAR_URL");
+            avatar_url = envvar("DEFAULT_AVATAR_URL");
         }
 
         let mate = DBMate__new! {
@@ -96,8 +100,7 @@ pub async fn switch(
         )
         .await?;
 
-    let collective =
-        utils::get_or_create_collective(&collectives_collection, ctx.author().id).await?;
+    let collective = get_or_create_collective(&collectives_collection, ctx.author().id).await?;
 
     if let Some(name) = name {
         let mate = mates_collection
@@ -124,7 +127,7 @@ pub async fn switch(
                 )
                 .await?;
 
-            utils::update_switch_logs(
+            update_switch_logs(
                 &collectives_collection,
                 &collective,
                 Some(mate.id.unwrap()),
@@ -151,7 +154,7 @@ pub async fn switch(
             )
             .await?;
 
-        utils::update_switch_logs(
+        update_switch_logs(
             &collectives_collection,
             &collective,
             None,

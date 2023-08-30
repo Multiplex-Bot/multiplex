@@ -14,7 +14,10 @@ use poise::{
 use super::CommandContext;
 use crate::{
     models::{DBCollective, DBMate},
-    utils,
+    utils::{
+        collectives::get_or_create_collective,
+        mates::{get_all_mates, get_mate},
+    },
 };
 
 /// Get the info of a user's collective or one of their mates
@@ -40,7 +43,7 @@ pub async fn info(
     let user_id = UserId(NonZeroU64::new(user_id as u64).unwrap());
 
     if let Some(mate) = mate {
-        let mate = utils::get_mate(&mates_collection, user_id, mate.clone())
+        let mate = get_mate(&mates_collection, user_id, mate.clone())
             .await
             .context("")?;
 
@@ -74,8 +77,8 @@ pub async fn info(
         let user = ctx.http().get_user(user_id).await?;
 
         let collectives_collection = database.collection::<DBCollective>("collectives");
-        let collective = utils::get_or_create_collective(&collectives_collection, user_id).await?;
-        let mates = utils::get_all_mates(&mates_collection, user_id).await?;
+        let collective = get_or_create_collective(&collectives_collection, user_id).await?;
+        let mates = get_all_mates(&mates_collection, user_id).await?;
 
         let ctx_id = ctx.id();
         let prev_button_id = format!("{}prev", ctx_id);

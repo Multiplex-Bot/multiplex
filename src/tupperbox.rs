@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     models::{DBMate, DBMate__new},
-    utils,
+    utils::misc::envvar,
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -39,7 +39,7 @@ impl Tupper {
             avatar = if !self.avatar_url.is_empty() {
                 self.avatar_url.clone()
             } else {
-                utils::envvar("DEFAULT_AVATAR_URL")
+                envvar("DEFAULT_AVATAR_URL")
             },
             is_public = true,
             bio = self.description.clone(),

@@ -7,7 +7,13 @@ use poise::serenity_prelude::{self as serenity, CacheHttp, EditWebhookMessage, M
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
     models::{DBChannel, DBCollective, DBMate, DBMessage},
-    utils,
+    utils::{
+        channels::get_webhook_or_create,
+        collectives::get_or_create_collective,
+        mates::get_mate,
+        messages::{get_message, get_most_recent_message},
+        misc::{message_link_to_id, upload_avatar},
+    },
 };
 
 #[poise::command(slash_command, subcommands("mate", "collective", "message"))]
@@ -39,7 +45,7 @@ pub async fn mate(
 
     if let Some(avatar) = avatar {
         avatar_url = Some(
-            utils::upload_avatar(
+            upload_avatar(
                 &ctx.data().avatar_bucket,
                 ctx.author().id,
                 name.clone(),
@@ -49,7 +55,7 @@ pub async fn mate(
         );
     }
 
-    utils::get_mate(&mates_collection, ctx.author().id, name.clone())
+    get_mate(&mates_collection, ctx.author().id, name.clone())
         .await
         .context("Failed to find mate to edit; does it exist?")?
         .edit(
@@ -86,7 +92,7 @@ pub async fn collective(
 
     let collectives_collection = database.collection::<DBCollective>("collectives");
 
-    utils::get_or_create_collective(&collectives_collection, ctx.author().id)
+    get_or_create_collective(&collectives_collection, ctx.author().id)
         .await?
         .edit(
             collectives_collection,
@@ -123,16 +129,16 @@ pub async fn message(
     if let Some(message_id) = message_id {
         message_to_edit_id = MessageId(NonZeroU64::new(message_id).unwrap())
     } else if let Some(message_link) = message_link {
-        message_to_edit_id = utils::message_link_to_id(message_link)?
+        message_to_edit_id = message_link_to_id(message_link)?
     } else {
-        let message = utils::get_most_recent_message(&messages_collection, ctx.author().id).await?;
+        let message = get_most_recent_message(&messages_collection, ctx.author().id).await?;
         message_to_edit_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
     }
 
     let (webhook, thread_id) =
-        utils::get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
+        get_webhook_or_create(ctx.http(), &channels_collection, ctx.channel_id()).await?;
 
-    _ = utils::get_message(
+    _ = get_message(
         &messages_collection,
         Some(ctx.author().id),
         message_to_edit_id,

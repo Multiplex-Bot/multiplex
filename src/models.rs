@@ -7,7 +7,7 @@ use mongodb::{
 use orderless::impl_orderless;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::parse_selector;
+use crate::utils::messages::parse_selector;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DBMate {

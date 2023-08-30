@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use crate::{
     models::{DBCollective, DBCollective__new, DBMate, DBMate__new},
-    utils,
+    utils::misc::envvar,
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -141,7 +141,7 @@ impl<'a> Member<'a> {
                 avatar = self
                     .avatar_url
                     .clone()
-                    .unwrap_or(utils::envvar("DEFAULT_AVATAR_URL")),
+                    .unwrap_or(envvar("DEFAULT_AVATAR_URL")),
                 bio = self.description.clone(),
                 prefix = proxy_tags.prefix.clone(),
                 postfix = proxy_tags.suffix.clone(),

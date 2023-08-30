@@ -5,7 +5,7 @@ use poise::{serenity_prelude::CreateEmbed, CreateReply};
 use super::CommandContext;
 use crate::{
     models::{DBCollective, DBMate},
-    utils,
+    utils::collectives::get_or_create_collective,
 };
 
 /// Shows the last 5 switches for your collective
@@ -15,8 +15,7 @@ pub async fn switch_logs(ctx: CommandContext<'_>) -> Result<()> {
     let collectives_collection = database.collection::<DBCollective>("collectives");
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let collective =
-        utils::get_or_create_collective(&collectives_collection, ctx.author().id).await?;
+    let collective = get_or_create_collective(&collectives_collection, ctx.author().id).await?;
 
     if let Some(switch_logs) = collective.switch_logs {
         let mut fields = vec![];
