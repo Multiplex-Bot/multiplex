@@ -34,7 +34,7 @@ pub async fn tupperbox(
     let mates_collection = database.collection::<DBMate>("mates");
 
     for tupper in export.tuppers.iter() {
-        let mate = tupper.to_mate()?;
+        let mate = tupper.to_mate(ctx.author().id)?;
 
         mates_collection
             .find_one_and_update(
