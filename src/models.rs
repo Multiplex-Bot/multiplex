@@ -40,9 +40,12 @@ impl Signature {
 
         let split_sig = match split_sig {
             (None, None) => (String::new(), String::new()),
-            (None, Some(r)) => (String::new(), r.to_string()),
-            (Some(l), None) => (l.to_string(), String::new()),
-            (Some(l), Some(r)) => (l.to_string(), r.to_string()),
+            (None, Some(r)) => (String::new(), r.to_string().replace("\\n", "\n")),
+            (Some(l), None) => (l.to_string().replace("\\n", "\n"), String::new()),
+            (Some(l), Some(r)) => (
+                l.to_string().replace("\\n", "\n"),
+                r.to_string().replace("\\n", "\n"),
+            ),
         };
 
         Signature {
