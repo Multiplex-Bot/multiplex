@@ -22,14 +22,41 @@ pub struct DBMate {
     pub prefix: Option<String>,
     pub postfix: Option<String>,
     pub pronouns: Option<String>,
+    pub signature: Option<Signature>,
     pub display_name: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct Signature {
+    pub prefix: String,
+    pub postfix: String,
+}
+
+impl Signature {
+    pub fn parse(signature: String) -> Self {
+        let mut split_sig = signature.split("text");
+
+        let split_sig = (split_sig.next(), split_sig.next());
+
+        let split_sig = match split_sig {
+            (None, None) => (String::new(), String::new()),
+            (None, Some(r)) => (String::new(), r.to_string()),
+            (Some(l), None) => (l.to_string(), String::new()),
+            (Some(l), Some(r)) => (l.to_string(), r.to_string()),
+        };
+
+        Signature {
+            prefix: split_sig.0,
+            postfix: split_sig.1,
+        }
+    }
 }
 
 #[impl_orderless]
 impl DBMate {
     #[make_orderless(
         public = true,
-        defs(bio = None, prefix = None, postfix = None, pronouns = None, display_name = None, id = None),
+        defs(bio = None, prefix = None, postfix = None, pronouns = None, display_name = None, signature = None, id = None),
     )]
     pub fn new(
         user_id: i64,
@@ -42,6 +69,7 @@ impl DBMate {
         postfix: Option<String>,
         pronouns: Option<String>,
         display_name: Option<String>,
+        signature: Option<Signature>,
         id: Option<ObjectId>,
     ) -> DBMate {
         DBMate {
@@ -55,6 +83,7 @@ impl DBMate {
             postfix,
             pronouns,
             display_name,
+            signature,
             id,
         }
     }
@@ -69,6 +98,7 @@ impl DBMate {
         selector: Option<String>,
         publicity: Option<bool>,
         avatar: Option<String>,
+        signature: Option<String>,
     ) -> Result<()> {
         let current_name = self.name.clone();
 
@@ -102,6 +132,10 @@ impl DBMate {
 
         if let Some(avatar) = avatar {
             self.avatar = avatar;
+        }
+
+        if let Some(signature) = signature {
+            self.signature = Some(Signature::parse(signature))
         }
 
         collection

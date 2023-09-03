@@ -40,7 +40,7 @@ pub async fn send_proxied_message(
         get_webhook_or_create(http, &channels_collection, message.channel_id).await?;
 
     let new_content = message.content.clone();
-    let new_content = message
+    let mut new_content = message
         .content
         .clone()
         .strip_prefix(&mate.prefix.clone().unwrap_or_default())
@@ -48,6 +48,10 @@ pub async fn send_proxied_message(
         .strip_suffix(&mate.postfix.clone().unwrap_or_default())
         .unwrap_or(&new_content)
         .to_string();
+
+    if let Some(sig) = &mate.signature {
+        new_content = format!("{}{}{}", sig.prefix, new_content, sig.postfix)
+    }
 
     let mut builder = ExecuteWebhook::new();
 

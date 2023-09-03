@@ -36,6 +36,9 @@ pub async fn mate(
     #[description = "the new avatar to use when proxying"] avatar: Option<serenity::Attachment>,
     #[description = "the mate's bio"] bio: Option<String>,
     #[description = "the mate's pronouns"] pronouns: Option<String>,
+    #[description = "a signature to add to any proxied messages (ie `💙- text`)"] signature: Option<
+        String,
+    >,
 ) -> Result<()> {
     let database = &ctx.data().database;
 
@@ -67,6 +70,7 @@ pub async fn mate(
             selector,
             publicity,
             avatar_url,
+            signature,
         )
         .await?;
 

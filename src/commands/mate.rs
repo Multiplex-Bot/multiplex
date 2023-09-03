@@ -4,7 +4,7 @@ use poise::serenity_prelude::{self as serenity};
 
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{
-    models::{DBCollective, DBMate, DBMate__new},
+    models::{DBCollective, DBMate, DBMate__new, Signature},
     utils::{
         collectives::{get_or_create_collective, update_switch_logs},
         messages::parse_selector,
@@ -28,6 +28,9 @@ pub async fn create(
     >,
     #[description = "the mate's bio"] bio: Option<String>,
     #[description = "the mate's pronouns"] pronouns: Option<String>,
+    #[description = "a signature to add to any proxied messages (ie `💙- text`)"] signature: Option<
+        String,
+    >,
 ) -> Result<()> {
     let database = &ctx.data().database;
     let mates_collection = database.collection::<DBMate>("mates");
@@ -58,6 +61,11 @@ pub async fn create(
         } else {
             avatar_url = envvar("DEFAULT_AVATAR_URL");
         }
+        let signature = if let Some(signature) = signature {
+            Some(Signature::parse(signature))
+        } else {
+            None
+        };
 
         let mate = DBMate__new! {
             user_id = ctx.author().id.get() as i64,
@@ -69,6 +77,7 @@ pub async fn create(
             bio,
             pronouns,
             display_name,
+            signature,
             autoproxy = false,
         };
 
