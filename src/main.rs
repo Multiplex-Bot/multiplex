@@ -73,7 +73,7 @@ async fn main() {
             commands::admin::admin(),
             commands::switch_logs::switch_logs(),
         ],
-        listener: |event, _framework, data| {
+        event_handler: |event, _framework, data| {
             Box::pin(async move {
                 match event {
                     FullEvent::Ready {

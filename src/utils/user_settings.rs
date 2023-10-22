@@ -3,10 +3,7 @@ use mongodb::{
     bson::{self, doc},
     Collection,
 };
-use poise::{
-    futures_util::TryStreamExt,
-    serenity_prelude::{Message, UserId},
-};
+use poise::serenity_prelude::{Message, UserId};
 
 use crate::models::{AutoproxySettings, DBUserSettings, Latch};
 

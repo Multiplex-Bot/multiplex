@@ -2,7 +2,7 @@ use std::num::NonZeroU64;
 
 use anyhow::{Context, Result};
 use mongodb::bson::doc;
-use poise::serenity_prelude::{self as serenity, CacheHttp, EditWebhookMessage, MessageId};
+use poise::serenity_prelude::{self as serenity, EditWebhookMessage, MessageId};
 
 use super::{autocomplete::mate as mate_autocomplete, CommandContext};
 use crate::{

@@ -1,10 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Utc;
 use mongodb::bson::doc;
-use poise::{
-    serenity_prelude::{CacheHttp, CreateEmbed},
-    CreateReply,
-};
+use poise::{serenity_prelude::CreateEmbed, CreateReply};
 
 use super::CommandContext;
 use crate::{models::DBMate, utils::misc::envvar};
@@ -15,9 +12,7 @@ pub async fn stats(ctx: CommandContext<'_>) -> Result<()> {
     let database = &ctx.data().database;
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let cache = ctx
-        .cache()
-        .context("Failed to get bot cache; try again later!")?;
+    let cache = ctx.cache();
 
     let user_count = mates_collection
         .distinct("user_id", None, None)

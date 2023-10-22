@@ -5,7 +5,7 @@ use mongodb::bson::doc;
 use poise::{
     serenity_prelude::{
         self as serenity, collector::ComponentInteractionCollector, futures::stream::StreamExt,
-        CacheHttp, CreateActionRow, CreateButton, CreateEmbed, CreateInteractionResponse,
+        CreateActionRow, CreateButton, CreateEmbed, CreateInteractionResponse,
         CreateInteractionResponseMessage, UserId,
     },
     CreateReply,
@@ -134,7 +134,7 @@ pub async fn info(
                 return Ok(());
             }
 
-            let mut collector = ComponentInteractionCollector::new(&ctx.discord().shard)
+            let mut collector = ComponentInteractionCollector::new(&ctx.serenity_context().shard)
                 .timeout(Duration::from_secs(300))
                 .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
                 .stream();
@@ -152,7 +152,7 @@ pub async fn info(
 
                 press
                     .create_response(
-                        ctx.cache_and_http(),
+                        ctx,
                         CreateInteractionResponse::UpdateMessage(
                             CreateInteractionResponseMessage::new().embed(
                                 final_embed.clone().field(
