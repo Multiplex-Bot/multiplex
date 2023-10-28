@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, options::FindOneOptions};
 use poise::serenity_prelude::{
@@ -31,7 +29,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
             if let Some(message_ref) = message.referenced_message.clone() {
                 let message = messages_collection
                     .find_one(
-                        doc! { "user_id": message.author.id.0.get() as i64, "message_id": message_ref.id.0.get() as i64 },
+                        doc! { "user_id": message.author.id.get() as i64, "message_id": message_ref.id.get() as i64 },
                         Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
                     ).await;
                 if let Ok(Some(_)) = message {
@@ -42,12 +40,12 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
             } else {
                 let message = messages_collection
                     .find_one(
-                        doc! { "user_id": message.author.id.0.get() as i64 },
+                        doc! { "user_id": message.author.id.get() as i64 },
                         Some(FindOneOptions::builder().sort(doc! {"_id": -1}).build()),
                     )
                     .await?
                     .context("Failed to get most recent message!")?;
-                message_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
+                message_id = MessageId::new(message.message_id)
             }
 
             message.delete(ctx.http()).await?;
@@ -69,13 +67,13 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
             }
 
             let channel = channels_collection
-                .find_one(doc! {"id": channel_id.0.get() as i64}, None)
+                .find_one(doc! {"id": channel_id.get() as i64}, None)
                 .await?
                 .context("oopsie daisy")?;
 
             let webhook = Webhook::from_id_with_token(
                 ctx.http(),
-                WebhookId(NonZeroU64::new(channel.webhook_id as u64).unwrap()),
+                WebhookId::new(channel.webhook_id as u64),
                 &channel.webhook_token,
             )
             .await?;

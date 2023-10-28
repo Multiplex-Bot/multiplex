@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, Collection};
 use poise::serenity_prelude::{
@@ -21,7 +19,7 @@ pub async fn send_server_proxy_log(
         http,
         &channels_collection,
         // SAFETY: due to the chain of database-required type changes, this is fine to unwrap as `proxy_logs_channel_id` can never be zero
-        ChannelId(NonZeroU64::new(proxy_logs_channel_id as u64).unwrap()),
+        ChannelId::new(proxy_logs_channel_id as u64),
     )
     .await?;
 

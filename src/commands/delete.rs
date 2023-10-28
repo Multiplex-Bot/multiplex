@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use anyhow::{Context, Result};
 use mongodb::bson::doc;
 use poise::serenity_prelude::MessageId;
@@ -54,12 +52,12 @@ pub async fn message(
 
     let message_to_delete_id;
     if let Some(message_id) = message_id {
-        message_to_delete_id = MessageId(NonZeroU64::new(message_id).unwrap())
+        message_to_delete_id = MessageId::new(message_id)
     } else if let Some(message_link) = message_link {
         message_to_delete_id = message_link_to_id(message_link)?
     } else {
         let message = get_most_recent_message(&messages_collection, ctx.author().id).await?;
-        message_to_delete_id = MessageId(NonZeroU64::new(message.message_id).unwrap())
+        message_to_delete_id = MessageId::new(message.message_id)
     }
 
     let (webhook, thread_id) =

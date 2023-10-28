@@ -1,4 +1,4 @@
-use std::{num::NonZeroU64, time::Duration};
+use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use mongodb::bson::doc;
@@ -40,7 +40,7 @@ pub async fn info(
     } else {
         user_id = user.clone().unwrap().id.get() as i64;
     }
-    let user_id = UserId(NonZeroU64::new(user_id as u64).unwrap());
+    let user_id = UserId::new(user_id as u64);
 
     if let Some(mate) = mate {
         let mate = get_mate(&mates_collection, user_id, mate.clone())

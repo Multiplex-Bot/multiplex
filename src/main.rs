@@ -116,7 +116,7 @@ async fn main() {
             let create_commands =
                 poise::builtins::create_application_commands(&framework.options().commands);
             if let Ok(id) = env::var("DEV_GUILD") {
-                GuildId(NonZeroU64::new(id.parse::<u64>().unwrap()).unwrap())
+                GuildId::new(id.parse::<u64>().unwrap())
                     .set_commands(ctx.http(), create_commands)
                     .await?;
                 tracing::info!("Using guild-specific slash commands in {}", id);

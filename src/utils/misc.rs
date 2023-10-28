@@ -1,4 +1,4 @@
-use std::{env, num::NonZeroU64};
+use std::env;
 
 use anyhow::{Context, Result};
 use mime2ext::mime2ext;
@@ -66,7 +66,5 @@ pub fn message_link_to_id(message_link: String) -> Result<MessageId> {
     let iter = message_link.split("/");
     let message_id = iter.last().context("Failed to get message ID from link!")?;
 
-    Ok(MessageId(
-        NonZeroU64::new(message_id.parse::<u64>()?).unwrap(),
-    ))
+    Ok(MessageId::new(message_id.parse::<u64>()?))
 }

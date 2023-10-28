@@ -34,7 +34,7 @@ pub struct Tupper {
 impl Tupper {
     pub fn to_mate(&self, user_id: UserId) -> Result<DBMate> {
         Ok(DBMate__new! {
-            user_id = user_id.0.get() as i64,
+            user_id = user_id.get() as i64,
             autoproxy = false,
             name = self.name.clone(),
             avatar = if !self.avatar_url.is_empty() {

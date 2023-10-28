@@ -36,7 +36,7 @@ pub struct PluralkitExport<'a> {
 impl<'a> PluralkitExport<'a> {
     pub fn to_collective(&self, user_id: UserId) -> Result<DBCollective> {
         Ok(DBCollective__new! {
-            user_id = user_id.0.get() as i64,
+            user_id = user_id.get() as i64,
             is_public = !self.privacy.is_private()?,
             name = self.name.clone(),
             bio = self.description.clone(),
@@ -135,7 +135,7 @@ impl<'a> Member<'a> {
         });
 
         Ok(DBMate__new! {
-                user_id = user_id.0.get() as i64,
+                user_id = user_id.get() as i64,
                 autoproxy = false,
                 name = self.name.clone(),
                 avatar = self

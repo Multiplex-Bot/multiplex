@@ -126,8 +126,8 @@ pub async fn send_proxied_message(
     messages_collection
         .insert_one(
             DBMessage {
-                message_id: new_message.id.0.get(),
-                user_id: message.author.id.0.get(),
+                message_id: new_message.id.get(),
+                user_id: message.author.id.get(),
                 mate_name: Some(mate.name.clone()),
             },
             None,

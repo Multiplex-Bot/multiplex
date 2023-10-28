@@ -11,7 +11,7 @@ pub async fn mate(ctx: CommandContext<'_>, current_arg: &str) -> Vec<String> {
     let mut mates: Vec<String> = mates_collection
         .distinct(
             "name",
-            doc! { "user_id": ctx.author().id.0.get() as i64 },
+            doc! { "user_id": ctx.author().id.get() as i64 },
             None,
         )
         .await

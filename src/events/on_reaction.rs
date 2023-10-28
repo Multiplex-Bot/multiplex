@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use anyhow::{Context, Result};
 use poise::serenity_prelude::{
     CacheHttp, Context as SerenityContext, CreateEmbed, CreateMessage, Reaction, UserId,
@@ -26,7 +24,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
         get_webhook_or_create(ctx.http(), &channels_collection, reaction.channel_id).await?;
 
     if reaction.emoji.unicode_eq("❌") {
-        if original_message.user_id == reaction.user_id.unwrap().0.get() {
+        if original_message.user_id == reaction.user_id.unwrap().get() {
             webhook
                 .delete_message(ctx.http(), thread_id, reaction.message_id)
                 .await?;
@@ -56,7 +54,7 @@ pub async fn run(ctx: &SerenityContext, data: &Data, reaction: &Reaction) -> Res
 
                                 let mate = get_mate(
                                     &mates_collection,
-                                    UserId(NonZeroU64::new(original_message.user_id).unwrap()),
+                                    UserId::new(original_message.user_id),
                                     mate_name,
                                 )
                                 .await

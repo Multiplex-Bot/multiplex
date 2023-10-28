@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use anyhow::{Context, Result};
 use mongodb::{bson::doc, Collection};
 use poise::serenity_prelude::{ChannelId, CreateWebhook, Http, Webhook, WebhookId};
@@ -38,7 +36,7 @@ pub async fn get_webhook_or_create(
     if let Ok(Some(dbchannel)) = dbchannel {
         webhook = Webhook::from_id_with_token(
             http,
-            WebhookId(NonZeroU64::new(dbchannel.webhook_id as u64).unwrap()),
+            WebhookId::new(dbchannel.webhook_id as u64),
             &dbchannel.webhook_token,
         )
         .await?;
