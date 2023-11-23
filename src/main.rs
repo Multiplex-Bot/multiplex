@@ -5,7 +5,7 @@ mod pluralkit;
 mod tupperbox;
 mod utils;
 
-use std::{env, num::NonZeroU64, time::Duration};
+use std::{env, time::Duration};
 
 use axum::{routing::get, Router};
 use commands::Data;

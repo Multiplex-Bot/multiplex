@@ -249,6 +249,7 @@ impl DBCollective {
 pub struct DBGuild {
     pub id: i64,
     pub proxy_logs_channel_id: Option<i64>,
+    pub allowlist_role: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

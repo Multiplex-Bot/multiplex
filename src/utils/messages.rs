@@ -4,7 +4,7 @@ use anyhow::{bail, Context, Result};
 use mongodb::{bson::doc, options::FindOneOptions, results::DeleteResult, Collection, Database};
 use poise::serenity_prelude::{
     CreateAttachment, CreateEmbed, CreateEmbedAuthor, ExecuteWebhook, Http, Message, MessageId,
-    UserId,
+    RoleId, UserId,
 };
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -35,6 +35,20 @@ pub async fn send_proxied_message(
     let channels_collection = database.collection::<DBChannel>("channels");
     let messages_collection = database.collection::<DBMessage>("messages");
     let guilds_collection = database.collection::<DBGuild>("guilds");
+
+    let guild_config =
+        get_or_create_dbguild(&guilds_collection, message.guild_id.unwrap().get() as i64).await?;
+
+    if let Some(allowlist_role) = guild_config.allowlist_role {
+        if !message
+            .member(http)
+            .await?
+            .roles
+            .contains(&RoleId::from(allowlist_role as u64))
+        {
+            return Ok(());
+        }
+    }
 
     let (webhook, thread_id) =
         get_webhook_or_create(http, &channels_collection, message.channel_id).await?;
@@ -133,9 +147,6 @@ pub async fn send_proxied_message(
             None,
         )
         .await?;
-
-    let guild_config =
-        get_or_create_dbguild(&guilds_collection, message.guild_id.unwrap().get() as i64).await?;
 
     if let Some(proxy_logs_channel_id) = guild_config.proxy_logs_channel_id {
         send_server_proxy_log(

@@ -69,6 +69,7 @@ pub async fn get_or_create_dbguild(
         let new_guild = DBGuild {
             id: guild_id,
             proxy_logs_channel_id: None,
+            allowlist_role: None,
         };
 
         collection
