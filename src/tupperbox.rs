@@ -15,9 +15,9 @@ pub struct TupperboxExport {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Tupper {
     pub id: i64,
-    pub user_id: String,
+    pub user_id: Option<String>,
     pub name: String,
-    pub position: i64,
+    pub position: Option<i64>,
     pub avatar_url: String,
     pub brackets: Vec<String>,
     pub posts: i64,
