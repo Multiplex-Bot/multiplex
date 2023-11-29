@@ -82,7 +82,7 @@ pub async fn autoproxy(
             )
             .await?;
 
-        ctx.send(CreateReply::new().content("Successfully updated your autoproxy settings!"))
+        ctx.send(CreateReply::default().content("Successfully updated your autoproxy settings!"))
             .await?;
 
         return Ok(());
@@ -107,7 +107,7 @@ pub async fn autoproxy(
 
     update_user_settings(&settings_collection, settings, Some(new_autoproxy)).await?;
 
-    ctx.send(CreateReply::new().content("Successfully updated your autoproxy settings!"))
+    ctx.send(CreateReply::default().content("Successfully updated your autoproxy settings!"))
         .await?;
 
     Ok(())

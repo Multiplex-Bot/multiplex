@@ -72,7 +72,7 @@ pub async fn info(
             );
         }
 
-        ctx.send(CreateReply::new().embed(final_embed)).await?;
+        ctx.send(CreateReply::default().embed(final_embed)).await?;
     } else {
         let user = ctx.http().get_user(user_id).await?;
 
@@ -115,7 +115,7 @@ pub async fn info(
             .collect::<Vec<_>>();
 
         if !mates_content.is_empty() {
-            let mut reply = CreateReply::new().embed(final_embed.clone().field(
+            let mut reply = CreateReply::default().embed(final_embed.clone().field(
                 "Mates",
                 mates_content[0..=4.min(mates_content.len() - 1)].join("\n"),
                 false,
@@ -181,7 +181,7 @@ pub async fn info(
                     .await?;
             }
         } else {
-            ctx.send(CreateReply::new().embed(final_embed)).await?;
+            ctx.send(CreateReply::default().embed(final_embed)).await?;
         }
     }
 

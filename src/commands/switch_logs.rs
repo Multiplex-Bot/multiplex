@@ -68,7 +68,7 @@ pub async fn switch_logs(ctx: CommandContext<'_>) -> Result<()> {
 
         let embed = CreateEmbed::new().title("Last 5 switches").fields(fields);
 
-        ctx.send(CreateReply::new().embed(embed)).await?;
+        ctx.send(CreateReply::default().embed(embed)).await?;
     } else {
         ctx.say("You have never switched!").await?;
     }

@@ -33,7 +33,7 @@ pub async fn stats(ctx: CommandContext<'_>) -> Result<()> {
         ("Guilds", guild_count.to_string(), false),
     ]);
 
-    ctx.send(CreateReply::new().embed(embed)).await?;
+    ctx.send(CreateReply::default().embed(embed)).await?;
 
     Ok(())
 }
@@ -72,6 +72,6 @@ pub async fn explain(ctx: CommandContext<'_>) -> Result<()> {
         ("Why are the bots talking?", "Discord shows webhooks as bots. No, they aren't real bots.", false)
     ]);
 
-    ctx.send(CreateReply::new().embed(embed)).await?;
+    ctx.send(CreateReply::default().embed(embed)).await?;
     Ok(())
 }

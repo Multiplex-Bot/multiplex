@@ -73,16 +73,15 @@ async fn main() {
             commands::admin::admin(),
             commands::switch_logs::switch_logs(),
         ],
-        event_handler: |event, _framework, data| {
+        event_handler: |ctx, event, _framework, data| {
             Box::pin(async move {
                 match event {
                     FullEvent::Ready {
-                        ctx: _,
                         data_about_bot: _,
                     } => {
                         tracing::info!("Bot is ready!")
                     }
-                    FullEvent::Message { ctx, new_message } => {
+                    FullEvent::Message { new_message } => {
                         if new_message.content.starts_with(&envvar("PREFIX")) {
                             events::on_text_command::run(ctx, data, new_message).await?
                         } else {
@@ -90,12 +89,11 @@ async fn main() {
                         }
                     }
                     FullEvent::MessageUpdate {
-                        ctx,
                         old_if_available: _,
                         new: _,
                         event,
                     } => events::on_edit::run(ctx, data, event).await?,
-                    FullEvent::ReactionAdd { ctx, add_reaction } => {
+                    FullEvent::ReactionAdd { add_reaction } => {
                         events::on_reaction::run(ctx, data, add_reaction).await?
                     }
                     _ => {}

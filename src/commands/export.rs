@@ -82,7 +82,7 @@ pub async fn export(ctx: CommandContext<'_>) -> Result<()> {
     };
 
     ctx.send(
-        CreateReply::new()
+        CreateReply::default()
             .content(
                 "Exported data! (Warning: This download may not work properly on mobile devices, \
                  because Discord doesn't know how to program.)",
