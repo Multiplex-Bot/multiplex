@@ -1542,8 +1542,7 @@ checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 [[package]]
 name = "poise"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b61c51fefe40f9b8b1ebe793e51fd0c1ad43573632806ac997955e55f7c03b6"
+source = "git+https://github.com/GnomedDev/poise.git?branch=fix-arg-parsing#cb26610fd662cc9ef501c3d0fa8f521739f94821"
 dependencies = [
  "async-trait",
  "derivative",
@@ -1559,8 +1558,7 @@ dependencies = [
 [[package]]
 name = "poise_macros"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f73b774fe2158004453afd46228c9df92d22aef340f90dc1a6fe18f2d586ef5"
+source = "git+https://github.com/GnomedDev/poise.git?branch=fix-arg-parsing#cb26610fd662cc9ef501c3d0fa8f521739f94821"
 dependencies = [
  "darling 0.20.3",
  "proc-macro2",
@@ -2651,9 +2649,9 @@ dependencies = [
 
 [[package]]
 name = "triomphe"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0c5a71827ac326072b6405552093e2ad2accd25a32fd78d4edc82d98c7f2409"
+checksum = "859eb650cfee7434994602c3a68b25d77ad9e68c8a6cd491616ef86661382eb3"
 
 [[package]]
 name = "trust-dns-proto"
@@ -2751,9 +2749,9 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typesize"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e43a952445d2d9df648a822545093c01699df209ceda4df5ac78fef8969c61c"
+checksum = "46638a7bcd4104adbb21b558651f24bdc6a26366a0476099076d0771b864561b"
 dependencies = [
  "chrono",
  "dashmap",
@@ -2769,9 +2767,9 @@ dependencies = [
 
 [[package]]
 name = "typesize-derive"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5274e4d582fd16b83bf7949cc44d6610d3b0290e441d9e5c337fdda9a003849f"
+checksum = "0b122284365ba8497be951b9a21491f70c9688eb6fddc582931a0703f6a00ece"
 dependencies = [
  "proc-macro2",
  "quote",
