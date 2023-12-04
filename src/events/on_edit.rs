@@ -1,5 +1,5 @@
 use anyhow::Result;
-use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, MessageUpdateEvent};
+use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, MessageUpdateEvent, Message};
 
 use crate::{
     commands::Data,
@@ -11,8 +11,8 @@ use crate::{
     },
 };
 
-pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEvent) -> Result<()> {
-    if message.author.as_ref().and_then(|author| Some(author.bot)) == Some(true) {
+pub async fn run(ctx: &SerenityContext, data: &Data, event_message: &MessageUpdateEvent) -> Result<()> {
+    if event_message.author.as_ref().and_then(|author| Some(author.bot)) == Some(true) {
         return Ok(());
     }
 
@@ -22,11 +22,9 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &MessageUpdateEven
     let collectives_collection = database.collection::<DBCollective>("collectives");
     let settings_collection = database.collection::<DBUserSettings>("settings");
 
-    let message = ctx
-        .http()
-        .get_message(message.channel_id, message.id)
-        .await?;
-
+    let mut message = Message::default();
+    event_message.apply_to_message(&mut message);
+    
     let mates = get_all_mates(&mates_collection, message.author.id).await?;
 
     if mates.len() == 0 {

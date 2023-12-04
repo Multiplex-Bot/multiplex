@@ -32,19 +32,12 @@ pub async fn send_proxied_message(
     collective: DBCollective,
     database: &Database,
 ) -> Result<()> {
-    let message = &mut message.clone();
-
     let channels_collection = database.collection::<DBChannel>("channels");
     let messages_collection = database.collection::<DBMessage>("messages");
     let guilds_collection = database.collection::<DBGuild>("guilds");
 
-    // JANK: apparently, guild_id is not returned by the message object anymore. nor does `.channel()` work. so we must do this abomination
-    let channel_id = message.channel_id;
-    let channel = http.get_channel(channel_id).await?;
-    let guild_id = channel.guild().unwrap().guild_id;
-    message.guild_id = Some(guild_id);
-
-    let guild_config = get_or_create_dbguild(&guilds_collection, guild_id.get() as i64).await?;
+    let guild_config =
+        get_or_create_dbguild(&guilds_collection, message.guild_id.unwrap().get() as i64).await?;
 
     if let Some(allowlist_role) = guild_config.allowlist_role {
         if !message
