@@ -32,6 +32,7 @@ pub async fn mate(
         bool,
     >,
     #[description = "the new avatar to use when proxying"] avatar: Option<serenity::Attachment>,
+	#[description = "a link to an avatar to use when proxying"] avatar_url: Option<String>,
     #[description = "the mate's bio"] bio: Option<String>,
     #[description = "the mate's pronouns"] pronouns: Option<String>,
     #[description = "a signature to add to any proxied messages (ie `💙- text`)"] signature: Option<
@@ -42,7 +43,7 @@ pub async fn mate(
 
     let mates_collection = database.collection::<DBMate>("mates");
 
-    let mut avatar_url = None;
+    let mut avatar_url = avatar_url;
 
     if let Some(avatar) = avatar {
         avatar_url = Some(
@@ -52,8 +53,9 @@ pub async fn mate(
                 name.clone(),
                 avatar,
             )
-            .await?,
-        );
+				.await?
+		)
+        
     }
 
     get_mate(&mates_collection, ctx.author().id, name.clone())
