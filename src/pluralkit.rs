@@ -84,7 +84,7 @@ pub struct Config {
     pub member_limit: i64,
     pub group_limit: i64,
     pub case_sensitive_proxy_tags: bool,
-    pub description_templates: Vec<()>,
+    pub description_templates: Vec<String>,
 }
 
 impl Default for Config {
