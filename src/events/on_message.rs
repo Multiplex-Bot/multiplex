@@ -1,5 +1,5 @@
-use anyhow::Result;
-use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message};
+use anyhow::{Context, Result};
+use poise::serenity_prelude::{CacheHttp, Context as SerenityContext, Message, MessageFlags};
 
 use crate::{
     commands::Data,
@@ -13,6 +13,16 @@ use crate::{
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
+    // FIXME: make this configurable later but immediately drop voice messages because someone asked for it
+    //        and, as mr krabs would say: "we shall never deny a guest even the most ridiculous request"
+    if message
+        .flags
+        .context("how the FUCK does this message not have flags")?
+        .intersects(MessageFlags::IS_VOICE_MESSAGE)
+    {
+        return Ok(());
+    }
+
     if message.author.bot {
         return Ok(());
     }

@@ -18,7 +18,7 @@ pub async fn send_server_proxy_log(
     let webhook = get_webhook_or_create(
         http,
         &channels_collection,
-        // SAFETY: due to the chain of database-required type changes, this is fine to unwrap as `proxy_logs_channel_id` can never be zero
+        // SAFETY: due to the chain of database-required type changes, this is fine to panic as `proxy_logs_channel_id` can never be zero
         ChannelId::new(proxy_logs_channel_id as u64),
     )
     .await?;
