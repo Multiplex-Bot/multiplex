@@ -13,8 +13,7 @@ use crate::{
 };
 
 pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Result<()> {
-    // FIXME: make this configurable later but immediately drop voice messages because someone asked for it
-    //        and, as mr krabs would say: "we shall never deny a guest even the most ridiculous request"
+    // FIXME: just drop voice messages until we can be bothered to actually implement proxying them
     if message
         .flags
         .context("how the FUCK does this message not have flags")?

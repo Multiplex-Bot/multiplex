@@ -62,6 +62,7 @@ async fn main() {
             commands::misc::ping(),
             commands::misc::support(),
             commands::misc::stats(),
+            commands::misc::reset(),
             commands::mate::create(),
             commands::delete::delete(),
             commands::mate::switch(),
@@ -76,9 +77,7 @@ async fn main() {
         event_handler: |ctx, event, _framework, data| {
             Box::pin(async move {
                 match event {
-                    FullEvent::Ready {
-                        data_about_bot: _,
-                    } => {
+                    FullEvent::Ready { data_about_bot: _ } => {
                         tracing::info!("Bot is ready!")
                     }
                     FullEvent::Message { new_message } => {

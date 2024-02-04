@@ -1,10 +1,21 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use chrono::Utc;
 use mongodb::bson::doc;
-use poise::{serenity_prelude::CreateEmbed, CreateReply};
+use poise::{
+    serenity_prelude::{
+        futures::StreamExt, ComponentInteractionCollector, CreateActionRow, CreateButton,
+        CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    },
+    CreateReply,
+};
 
 use super::CommandContext;
-use crate::{models::DBMate, utils::misc::envvar};
+use crate::{
+    models::{DBCollective, DBMate, DBMessage, DBUserSettings},
+    utils::misc::envvar,
+};
 
 /// Get the statistics of the bot
 #[poise::command(slash_command, ephemeral)]
@@ -73,5 +84,88 @@ pub async fn explain(ctx: CommandContext<'_>) -> Result<()> {
     ]);
 
     ctx.send(CreateReply::default().embed(embed)).await?;
+    Ok(())
+}
+
+/// Resets your entire collective. THIS DELETES EVERYTHING. THIS CANNOT BE UNDONE. YOU HAVE BEEN WARNED.
+#[poise::command(slash_command, ephemeral)]
+pub async fn reset(ctx: CommandContext<'_>) -> Result<()> {
+    let reply = CreateReply::default()
+        .content(
+            "Are you sure you want to do this? Are you ***sure*** you want to ***delete \
+             everything***? If not, please do not press yes and ignore this command.",
+        )
+        .components(vec![CreateActionRow::Buttons(vec![CreateButton::new(
+            format!("{}reset", ctx.id()),
+        )
+        .label("Yes")])]);
+
+    ctx.send(reply).await?;
+
+    let ctx_id = ctx.id();
+    let mut collector = ComponentInteractionCollector::new(&ctx.serenity_context().shard)
+        .timeout(Duration::from_secs(60))
+        .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
+        .stream();
+
+    while let Some(press) = collector.next().await {
+        if press.data.custom_id == format!("{}reset", ctx.id()) {
+            let database = &ctx.data().database;
+            let mates_collection = database.collection::<DBMate>("mates");
+            let collectives_collection = database.collection::<DBCollective>("collectives");
+            let settings_collection = database.collection::<DBUserSettings>("settings");
+            let messages_collection = database.collection::<DBMessage>("messages");
+
+            mates_collection
+                .delete_many(
+                    doc! {
+                        "user_id": ctx.author().id.get() as i64
+                    },
+                    None,
+                )
+                .await?;
+
+            collectives_collection
+                .delete_many(
+                    doc! {
+                        "user_id": ctx.author().id.get() as i64
+                    },
+                    None,
+                )
+                .await?;
+
+            settings_collection
+                .delete_many(
+                    doc! {
+                        "user_id": ctx.author().id.get() as i64
+                    },
+                    None,
+                )
+                .await?;
+
+            messages_collection
+                .delete_many(
+                    doc! {
+                        "user_id": ctx.author().id.get() as i64
+                    },
+                    None,
+                )
+                .await?;
+
+            press
+                .create_response(
+                    &ctx.http(),
+                    CreateInteractionResponse::UpdateMessage(
+                        CreateInteractionResponseMessage::default()
+                            .content("Your collective has been completely deleted.")
+                            .components(vec![]),
+                    ),
+                )
+                .await?;
+
+            break;
+        }
+    }
+
     Ok(())
 }
