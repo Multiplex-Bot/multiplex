@@ -41,6 +41,9 @@ pub async fn run(ctx: &SerenityContext, data: &Data, message: &Message) -> Resul
     let mut mate = get_matching_mate(&mates, &message.content);
 
     if message.content.starts_with("\\") {
+        return Ok(());
+    }
+    if message.content.starts_with("\\\\") {
         update_latch(&settings_collection, message, None).await?;
 
         return Ok(());
