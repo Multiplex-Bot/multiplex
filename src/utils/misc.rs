@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use mime2ext::mime2ext;
 use poise::serenity_prelude::{Attachment, ChannelType, GuildChannel, MessageId, UserId};
 use s3::Bucket;
-use urlencoding::encode;
+use sha256::digest;
 
 /// note: this should have the `s/` passed into it as a prefix
 pub fn handle_sed_edit(_message_content: &String, sed_statement: &String) {
@@ -32,28 +32,27 @@ pub fn envvar(var: &str) -> String {
 
 pub async fn upload_avatar(
     avatar_bucket: &Bucket,
-    user_id: UserId,
-    mate_name: String,
+    _user_id: UserId,
+    _mate_name: String,
     attachment: Attachment,
 ) -> Result<String> {
+    // FIXME: actually check whether the attachment is an image to avoid being used as a freer cdn than discord was
     let file_ext = mime2ext(attachment.content_type.clone().context(
         "The file does not have a mime type; this should not be possible. What arcane magic did \
          you use?",
     )?)
     .context("Failed to convert detected file type to extension!")?;
 
+    let avatar = attachment.download().await?;
+
     avatar_bucket
-        .put_object(
-            format!("/{}/{}.{}", user_id.get(), mate_name, file_ext),
-            &*attachment.download().await?,
-        )
+        .put_object(format!("/{}.{}", digest(&avatar), file_ext), &avatar)
         .await?;
 
     Ok(format!(
-        "{}/{}/{}.{}",
+        "{}/{}.{}",
         envvar("PUBLIC_AVATAR_URL"),
-        user_id.get(),
-        encode(&mate_name),
+        digest(avatar),
         file_ext
     ))
 }
