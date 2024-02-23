@@ -7,6 +7,7 @@ pub mod import;
 pub mod info;
 pub mod mate;
 pub mod misc;
+pub mod reproxy;
 pub mod settings;
 pub mod switch_logs;
 
