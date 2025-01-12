@@ -14,7 +14,7 @@ mime2ext = "0.1.52"
 mongodb = { version = "2.4.0", features = ["bson-chrono-0_4"] }
 once_cell = "1.17.1"
 orderless = "0.1.5"
-poise = { git = "https://github.com/serenity-rs/poise", rev = "bd969b9" }
+poise = { git = "https://github.com/serenity-rs/poise", rev = "22b5b01" }
 proc-macro2 = "1.0.67"
 rand = "0.8.5"
 rust-s3 = "0.33.0"
